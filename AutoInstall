@@ -1,0 +1,3 @@
+; AmiUpdate AutoInstall for XAD RAR Client
+cd xad_rar
+Installer Install APPNAME XADRARAutoInstall DEFUSER NOVICE
