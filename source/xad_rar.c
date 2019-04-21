@@ -117,13 +117,14 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		libnixopen();
 	#endif
 	
-	cbdata = AllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
-	cbdata->ai = ai;
-	cbdata->IxadMaster = IxadMaster;
-	
 	ai->xai_PrivateClient = xadAllocVec(sizeof(struct xadrarprivate),MEMF_PRIVATE | MEMF_CLEAR);
 	xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
 
+	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
+	cbdata->ai = ai;
+	cbdata->IxadMaster = IxadMaster;
+	xadrar->cbdata = cbdata;
+	
 	a = archive_read_new();
 	xadrar->a = a;
 	archive_read_support_format_rar(a);
@@ -164,7 +165,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 
 //	archive_read_free(a);
   
-	FreeVec(cbdata);
+//	FreeVec(cbdata);
   
 	return(err);
 }

@@ -9,14 +9,15 @@
 
 #include <libarchive/archive.h>
 
-struct xadrarprivate {
-	struct archive *a;
-};
-
 struct callbackuserdata {
 	struct xadArchiveInfo *ai;
 	struct xadMasterIFace *IxadMaster;
 	char *inbuffer;
+};
+
+struct xadrarprivate {
+	struct archive *a;
+	struct callbackuserdata *cbdata;
 };
 
 #endif
