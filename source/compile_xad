@@ -1,6 +1,7 @@
 gcc  -Wall -O3  -mcrt=newlib -D__USE_INLINE__ -DNDEBUG   -c -o extheader.o extheader_os4.c
 gcc  -Wall -O3  -mcrt=newlib -D__USE_INLINE__ -DNDEBUG   -c -o xad_rar.o xad_rar.c
-gcc  -Tdata=0 -O3 -mcrt=newlib -nostartfiles -o RAR extheader.o xad_rar.o -larchive -lstdc++
+gcc  -Tdata=0 -O3 -mcrt=newlib -nostartfiles -o RAR extheader.o xad_rar.o -larchive -lz
+;strip RAR
 ;copy RAR libs:xad
-;flush
+;expunge all
 

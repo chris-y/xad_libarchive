@@ -1,10 +1,6 @@
 /* XAD RAR client
  * by Chris Young <chris@unsatisfactorysoftware.co.uk>
  * and Stephan Matzke <stephan.matzke.adev@gmx.de>
- *
- * This client is built on a modified version of RAR_Extractor
- * by Shay Green which is based on the UnRAR source code
- * by Alexander L. Roshal.
  */
 
 #ifndef XADMASTER_RAR_C
@@ -31,6 +27,8 @@ struct Interface *INewlib;
 #include <proto/exec.h>
 #include <proto/utility.h>
 
+#include <libarchive/archive.h>
+#include <libarchive/archive_entry.h>
 
 #ifndef XADMASTERFILE
 #define rar_Client		FirstClient
@@ -47,6 +45,38 @@ const char *version = VERSTAG;
 #define MEMF_PRIVATE 0
 #endif
 
+ssize_t
+xad_rar_read(struct archive *a, void *client_data, const void **buff)
+{
+  struct callbackuserdata *cbdata = client_data;
+	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+
+  int pos = cbdata->ai->xai_InPos;
+  
+  if(cbdata->inbuffer == NULL) {
+		cbdata->inbuffer = xadAllocVec(1024, MEMF_CLEAR);
+  }
+  
+  xadHookAccess(XADAC_READ, 1024, cbdata->inbuffer, cbdata->ai);
+  
+  return cbdata->ai->xai_InPos - pos;
+}
+
+int
+xad_rar_close(struct archive *a, void *client_data)
+{
+  struct callbackuserdata *cbdata = client_data;
+	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+
+  if(cbdata->inbuffer != NULL) {
+		xadFreeObjectA(cbdata->inbuffer, NULL);
+		cbdata->inbuffer = NULL;
+  }
+  
+  return (ARCHIVE_OK);
+}
+
+
 #ifdef __amigaos4__
 BOOL rar_RecogData(ULONG size, STRPTR data,
 struct xadMasterIFace *IxadMaster)
@@ -55,7 +85,7 @@ ASM(BOOL) rar_RecogData(REG(d0, ULONG size), REG(a0, STRPTR data),
 REG(a6, struct xadMasterBase *xadMasterBase))
 #endif
 {
-  if(data[0]=='R' & data[1]=='a' & data[2]=='r' & data[3]=='!')
+  if((data[0]=='R') & (data[1]=='a') & (data[2]=='r') & (data[3]=='!'))
     return 1; /* known file */
   else
     return 0; /* unknown file */
@@ -69,12 +99,13 @@ ASM(LONG) rar_GetInfo(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase))
 #endif
 {
+	struct XadMasterIFace *IXadMaster = IxadMaster;
 	struct xadrarprivate *xadrar;
 	struct xadFileInfo *fi;
-	long err=XADERR_OK,filecounter;
-	ArchiveList_struct *rarlist = NULL;
-	ArchiveList_struct *templist = NULL;
-	int i;
+	long err=XADERR_OK;
+	struct callbackuserdata *cbdata;
+	struct archive *a;
+	struct archive_entry *entry;
 
 	#ifdef __amigaos4__
     IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
@@ -85,51 +116,56 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	#else
 		libnixopen();
 	#endif
-		
+	
+	cbdata = AllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
+	cbdata->ai = ai;
+	cbdata->IxadMaster = IxadMaster;
+	
 	ai->xai_PrivateClient = xadAllocVec(sizeof(struct xadrarprivate),MEMF_PRIVATE | MEMF_CLEAR);
 	xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
 
-#ifdef __amigaos4__
-	filecounter = urarlib_list(&rarlist, IxadMaster, ai );
-#else
-	filecounter = urarlib_list(&rarlist, xadMasterBase, ai );
-#endif
-
-	xadrar->List = rarlist;  // might need this later
-	templist = rarlist;
-
-	for (i = 0; i < filecounter; i++)
-	{
-		fi = (struct xadFileInfo *) xadAllocObjectA(XADOBJ_FILEINFO, NULL);
+	a = archive_read_new();
+	xadrar->a = a;
+	archive_read_support_format_rar(a);
+	archive_read_open(a, cbdata, NULL, xad_rar_read, xad_rar_close);
+	
+	while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+	  	fi = (struct xadFileInfo *) xadAllocObjectA(XADOBJ_FILEINFO, NULL);
 		if (!fi) return(XADERR_NOMEMORY);
-
-		fi->xfi_PrivateInfo = templist;
+		
+		fi->xfi_PrivateInfo = entry;
 		fi->xfi_DataPos = 0;
-		fi->xfi_Size = templist->item.UnpSize;
+		fi->xfi_Size = archive_entry_size(entry);
 		if (!(fi->xfi_FileName = xadConvertName(CHARSET_HOST,
-							XAD_STRINGSIZE,templist->item.NameSize,
-							XAD_CSTRING,templist->item.Name,
+							XAD_STRINGSIZE,strlen(archive_entry_pathname(entry)),
+							XAD_CSTRING,archive_entry_pathname(entry),
 							TAG_DONE))) return(XADERR_NOMEMORY);
 
-		xadConvertDates(XAD_DATEMSDOS,templist->item.FileTime,
+		xadConvertDates(XAD_DATEUNIX,archive_entry_ctime(entry),
 					XAD_GETDATEXADDATE,&fi->xfi_Date,
 					TAG_DONE);
 
-		fi->xfi_DosProtect = templist->item.FileAttr;
+//		fi->xfi_DosProtect = templist->item.FileAttr;    archive_entry_perm???
 
-		fi->xfi_CrunchSize  = templist->item.PackSize; //(long) (db->Database.PackSizes[i] << 32); //fi->xfi_Size;
+//		fi->xfi_CrunchSize  = templist->item.PackSize; //(long) (db->Database.PackSizes[i] << 32); //fi->xfi_Size;
 
 		fi->xfi_Flags = 0;
 
-		if(templist->item.FileAttr == 16)
+		if(archive_entry_filetype(entry) & AE_IFDIR)
 		{
 			fi->xfi_Flags |= XADFIF_DIRECTORY;
 		}
 
 		if ((err = xadAddFileEntryA(fi, ai, NULL))) return(XADERR_NOMEMORY);
-		templist = (ArchiveList_struct*)templist->next;
-    }
+		
+		
+//		printf("%s\\n",archive_entry_pathname(entry));
+	}
 
+//	archive_read_free(a);
+  
+	FreeVec(cbdata);
+  
 	return(err);
 }
 
@@ -141,11 +177,12 @@ ASM(LONG) rar_UnArchive(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase))
 #endif
 {
+	struct XadMasterIFace *IXadMaster = IxadMaster;
 	struct xadrarprivate *xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
   	struct xadFileInfo *fi = ai->xai_CurFile;
 	long err=XADERR_OK;
 	ULONG data_size = 0;
-	ArchiveList_struct *templist = (ArchiveList_struct *)fi->xfi_PrivateInfo;
+	struct archive_entry *entry = (struct archive_entry *)fi->xfi_PrivateInfo;
 
 	#ifdef __amigaos4__
 	if(!newlibbase)
@@ -159,14 +196,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		libnixopen();
 	#endif
 	
-#ifdef __amigaos4__
-	if(!urarlib_get(&data_size, templist->item.Name, IxadMaster, ai))
-#else
-	if(!urarlib_get(&data_size, templist->item.Name, xadMasterBase, ai))
-#endif
-	{
-		err=XADERR_UNKNOWN;
-	}
+	err=XADERR_UNKNOWN;
 
 	return(err);
 }
@@ -179,6 +209,7 @@ ASM(void) rar_Free(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase))
 #endif
 {
+	struct XadMasterIFace *IXadMaster = IxadMaster;
   /* This function needs to free all the stuff allocated in info or
   unarchive function. It may be called multiple times, so clear freed
   entries!
@@ -186,8 +217,11 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 
 	struct xadrarprivate *xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
 
-	urarlib_freelist(xadrar->List);
-
+	if(xadrar->a) {
+		archive_read_free(xadrar->a);
+		xadrar->a = NULL;
+	}
+	
 	xadFreeObjectA(ai->xai_PrivateClient,NULL);
 	ai->xai_PrivateClient = NULL;
 

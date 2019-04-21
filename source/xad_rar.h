@@ -6,10 +6,17 @@
 #define XADMASTER_RAR_H
 
 #include "RAR_rev.h"
-#include "Rar_Extractor-0.2.1/unrarlib/unrarlib.h"
+
+#include <libarchive/archive.h>
 
 struct xadrarprivate {
-	ArchiveList_struct *List;
+	struct archive *a;
+};
+
+struct callbackuserdata {
+	struct xadArchiveInfo *ai;
+	struct xadMasterIFace *IxadMaster;
+	char *inbuffer;
 };
 
 #endif
