@@ -56,10 +56,16 @@ xad_rar_read(struct archive *a, void *client_data, const void **buff)
   if(cbdata->inbuffer == NULL) {
 		cbdata->inbuffer = xadAllocVec(1024, MEMF_CLEAR);
   }
-  
+
   xadHookAccess(XADAC_READ, 1024, cbdata->inbuffer, cbdata->ai);
+  *buff = cbdata->inbuffer;  
   
-  return cbdata->ai->xai_InPos - pos;
+/*
+	struct ExecIFace *IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
+	DebugPrintF("read: %ld, pos: %ld, old pos: %ld\n", cbdata->ai->xai_InPos - pos, cbdata->ai->xai_InPos, pos);
+*/
+  
+  return (ssize_t)(cbdata->ai->xai_InPos - pos);
 }
 
 int
