@@ -78,6 +78,8 @@ xad_rar_close(struct archive *a, void *client_data)
 		xadFreeObjectA(cbdata->inbuffer, NULL);
 		cbdata->inbuffer = NULL;
   }
+
+    xadHookAccess(XADAC_INPUTSEEK, - cbdata->ai->xai_InPos, NULL, cbdata->ai);
   
   return (ARCHIVE_OK);
 }
@@ -144,8 +146,9 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		fi->xfi_DataPos = 0;
 		fi->xfi_Size = archive_entry_size(entry);
 		if (!(fi->xfi_FileName = xadConvertName(CHARSET_HOST,
-							XAD_STRINGSIZE,strlen(archive_entry_pathname(entry)),
-							XAD_CSTRING,archive_entry_pathname(entry),
+							XAD_CHARACTERSET, CHARSET_UNICODE_UTF8,
+						//	XAD_STRINGSIZE,strlen(archive_entry_pathname(entry)),
+							XAD_CSTRING, archive_entry_pathname_utf8(entry),
 							TAG_DONE))) return(XADERR_NOMEMORY);
 
 		xadConvertDates(XAD_DATEUNIX,archive_entry_ctime(entry),
