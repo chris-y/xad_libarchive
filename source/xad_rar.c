@@ -143,7 +143,7 @@ xad_rar_write_data(void *client_data, const void *buff, size_t n, int64_t offset
 }
 
 static int
-copy_data(struct archive *ar, void *client_data) //struct archive *aw)
+copy_data(struct archive *ar, void *client_data)
 {
 	int r;
 	const void *buff;
@@ -161,12 +161,6 @@ copy_data(struct archive *ar, void *client_data) //struct archive *aw)
 		if (r != ARCHIVE_OK)
 			return (r);
 		xad_rar_write_data(client_data, buff, size, offset);
-/*		r = archive_write_data_block(aw, buff, size, offset);
-		if (r != ARCHIVE_OK) {
-//			warn("archive_write_data_block()",
-//			    archive_error_string(aw));
-			return (r);
-		}*/
 	}
 }
 
@@ -178,9 +172,17 @@ ASM(BOOL) rar_RecogData(REG(d0, ULONG size), REG(a0, STRPTR data),
 REG(a6, struct xadMasterBase *xadMasterBase))
 #endif
 {
-  if((data[0]=='R') & (data[1]=='a') & (data[2]=='r') & (data[3]=='!'))
-    return 1; /* known file */
-  else
+  if((data[0]=='R') & (data[1]=='a') & (data[2]=='r') & (data[3]=='!') & (data[4]==0x1A) & (data[5]==0x07)) {
+#ifdef XAD_RAR5
+	if((data[6]==0x01) & (data[7]=0x00))
+		return 1; /* known file */
+#endif
+#ifdef XAD_RAR4
+	if((data[6]==0x00))
+		return 1; /* known file */
+#endif
+  }
+
     return 0; /* unknown file */
 }
 
@@ -210,14 +212,14 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		libnixopen();
 	#endif
 	
-/*
-	ai->xai_PrivateClient = xadAllocVec(sizeof(struct xadrarprivate),MEMF_PRIVATE | MEMF_CLEAR);
-	xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
-*/
-
 	a = archive_read_new();
+#ifdef XAD_RAR4
 	archive_read_support_format_rar(a);
-	
+#endif
+#ifdef XAD_RAR5
+	archive_read_support_format_rar5(a);
+#endif
+
 	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
 	
 #ifdef STREAMED_DATA
@@ -321,8 +323,13 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	xadHookAccess(XADAC_INPUTSEEK, - ai->xai_InPos, NULL, ai);
 	
 	a = archive_read_new();
+#ifdef XAD_RAR4
 	archive_read_support_format_rar(a);
-	
+#endif
+#ifdef XAD_RAR5
+	archive_read_support_format_rar5(a);
+#endif
+
 	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
 	
 #ifdef STREAMED_DATA
@@ -394,25 +401,6 @@ REG(a6, struct xadMasterBase *xadMasterBase))
   unarchive function. It may be called multiple times, so clear freed
   entries!
   */
-
-  /*
-	struct xadrarprivate *xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
-
-	if(xadrar->a) {
-		archive_read_free(xadrar->a);
-		xadrar->a = NULL;
-	}
-	
-	if(xadrar->cbdata) {
-		if(xadrar->cbdata->inbuffer != NULL) {
-			xadFreeObjectA(xadrar->cbdata->inbuffer, NULL);
-			xadrar->cbdata->inbuffer = NULL;
-		}
-		
-		xadFreeObjectA(xadrar->cbdata, NULL);
-		xadrar->cbdata = NULL;
-	}
-*/
 
 	xadFreeObjectA(ai->xai_PrivateClient,NULL);
 	ai->xai_PrivateClient = NULL;

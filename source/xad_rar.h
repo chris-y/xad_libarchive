@@ -5,6 +5,13 @@
 #ifndef XADMASTER_RAR_H
 #define XADMASTER_RAR_H
 
+/* define these to support RAR4 or RAR5 or both
+ * RAR4 is also known as RAR3 and seems to have issues
+ * RAR5 needs a newer than 3.3.3 libarchive
+ */
+#define XAD_RAR4 1 /* we used to call this RAR3 */
+//#define XAD_RAR5 1
+
 /* set to stream data rather than reading all in memory */
 #define STREAMED_DATA 1
 
