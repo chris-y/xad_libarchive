@@ -15,6 +15,20 @@
 /* set to stream data rather than reading all in memory */
 #define STREAMED_DATA 1
 
+#ifdef XAD_RAR5
+#ifdef XAD_RAR4
+#define XAD_MOD_NAME "RAR"
+#else
+#define XAD_MOD_NAME "RAR5"
+#endif
+#else
+#ifdef XAD_RAR4
+#define XAD_MOD_NAME "RAR"
+#else
+#error One of XAD_RAR4 or XAD_RAR5 must be defined
+#endif
+#endif
+
 #include "RAR_rev.h"
 
 #include <libarchive/archive.h>

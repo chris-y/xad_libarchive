@@ -419,7 +419,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 const struct xadClient rar_Client = {
 NEXTCLIENT, XADCLIENT_VERSION, XADMASTERVERSION, VERSION, REVISION,
 6, XADCF_FILEARCHIVER|XADCF_FREEFILEINFO|XADCF_FREEXADSTRINGS,
-0 /* Type identifier. Normally should be zero */, "RAR",
+0 /* Type identifier. Normally should be zero */, XAD_MOD_NAME,
 (BOOL (*)()) rar_RecogData, (LONG (*)()) rar_GetInfo,
 (LONG (*)()) rar_UnArchive, (void (*)()) rar_Free };
 
