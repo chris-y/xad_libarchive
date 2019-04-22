@@ -366,20 +366,22 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 			r = archive_write_header(ext, entry);
 			if (r != ARCHIVE_OK) {
 				err = arc_to_xad_error(r);
+				DebugPrintF("xad_rar error: %s", archive_error_string(ext));
 				break;
 			} else {
 				copy_data(a, ext);
 				r = archive_write_finish_entry(ext);
 				if (r != ARCHIVE_OK) {
 					err = arc_to_xad_error(r);
+					DebugPrintF("xad_rar error: %s", archive_error_string(ext));
 					break;
 				}
 			}
 			
-			break;
-
 			archive_write_close(ext);
 			archive_write_free(ext);
+			
+			break;
 		}
 
 		i++;
