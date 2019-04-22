@@ -6,7 +6,7 @@
 #define XADMASTER_RAR_H
 
 /* set to stream data rather than reading all in memory */
-//#define STREAMED_DATA 1
+#define STREAMED_DATA 1
 
 #include "RAR_rev.h"
 

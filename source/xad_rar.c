@@ -157,12 +157,12 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		fi->xfi_DataPos = 0;
 		fi->xfi_Size = archive_entry_size(entry);
 		if (!(fi->xfi_FileName = xadConvertName(CHARSET_HOST,
-							XAD_CHARACTERSET, CHARSET_UNICODE_UTF8,
+						//	XAD_CHARACTERSET, CHARSET_UNICODE_UTF8,
 						//	XAD_STRINGSIZE,strlen(archive_entry_pathname(entry)),
-							XAD_CSTRING, archive_entry_pathname_utf8(entry),
+							XAD_CSTRING, archive_entry_pathname(entry),
 							TAG_DONE))) return(XADERR_NOMEMORY);
 
-		xadConvertDates(XAD_DATEUNIX,archive_entry_ctime(entry),
+		xadConvertDates(XAD_DATEUNIX,archive_entry_mtime(entry),
 					XAD_GETDATEXADDATE,&fi->xfi_Date,
 					TAG_DONE);
 
