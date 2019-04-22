@@ -45,6 +45,7 @@ const char *version = VERSTAG;
 #define MEMF_PRIVATE 0
 #endif
 
+#ifdef STREAMED_DATA
 ssize_t
 xad_rar_read(struct archive *a, void *client_data, const void **buff)
 {
@@ -83,7 +84,7 @@ xad_rar_close(struct archive *a, void *client_data)
   
   return (ARCHIVE_OK);
 }
-
+#endif
 
 #ifdef __amigaos4__
 BOOL rar_RecogData(ULONG size, STRPTR data,
@@ -128,16 +129,26 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	ai->xai_PrivateClient = xadAllocVec(sizeof(struct xadrarprivate),MEMF_PRIVATE | MEMF_CLEAR);
 	xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
 
-	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
-	cbdata->ai = ai;
-	cbdata->IxadMaster = IxadMaster;
-	xadrar->cbdata = cbdata;
-	
 	a = archive_read_new();
 	xadrar->a = a;
 	archive_read_support_format_rar(a);
-	archive_read_open(a, cbdata, NULL, xad_rar_read, xad_rar_close);
 	
+	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
+	xadrar->cbdata = cbdata;
+	
+#ifdef STREAMED_DATA
+	cbdata->ai = ai;
+	cbdata->IxadMaster = IxadMaster;
+
+	archive_read_open(a, cbdata, NULL, xad_rar_read, xad_rar_close);
+#else
+	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
+	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
+
+	archive_read_open_memory(a, cbdata->inbuffer, ai->xai_InSize);
+
+#endif
+
 	while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
 	  	fi = (struct xadFileInfo *) xadAllocObjectA(XADOBJ_FILEINFO, NULL);
 		if (!fi) return(XADERR_NOMEMORY);
@@ -232,6 +243,17 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		xadrar->a = NULL;
 	}
 	
+	if(xadrar->cbdata) {
+		if(xadrar->cbdata->inbuffer != NULL) {
+			xadFreeObjectA(xadrar->cbdata->inbuffer, NULL);
+			xadrar->cbdata->inbuffer = NULL;
+		}
+		
+		xadFreeObjectA(xadrar->cbdata, NULL);
+		xadrar->cbdata = NULL;
+	}
+
+
 	xadFreeObjectA(ai->xai_PrivateClient,NULL);
 	ai->xai_PrivateClient = NULL;
 
