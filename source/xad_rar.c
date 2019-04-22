@@ -279,6 +279,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		i++;
 	}
 
+	archive_read_close(a);
 	archive_read_free(a);
   
   	if(cbdata) {
@@ -310,7 +311,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	struct archive *a;
 	struct archive *ext;
 	struct archive_entry *entry;
-	int idx = (int)fi->xfi_PrivateInfo;
+	int idx = fi->xfi_PrivateInfo;
 	int r;
 	struct callbackuserdata *cbdata;
 	UBYTE *outbuffer = NULL;
@@ -326,6 +327,8 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	#else
 		libnixopen();
 	#endif
+	
+	xadHookAccess(XADAC_INPUTSEEK, - ai->xai_InPos, NULL, ai);
 	
 	a = archive_read_new();
 	archive_read_support_format_rar(a);
