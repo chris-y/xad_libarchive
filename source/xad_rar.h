@@ -24,7 +24,6 @@ struct xadrarprivate {
 	int idx;
 	struct archive *a;
 	struct callbackuserdata *cbdata;
-
 };
 
 #endif

@@ -72,34 +72,6 @@ long arc_to_xad_error(int err)
 }
 
 #ifdef STREAMED_DATA
-int
-xad_rar_w_open(struct archive *a, void *client_data)
-{
-  struct callbackuserdata *cbdata = client_data;
-
-    return (ARCHIVE_OK);
-}
-
-la_ssize_t
-xad_rar_w_write(struct archive *a, void *client_data, const void *buff, size_t n)
-{
-  struct callbackuserdata *cbdata = client_data;
-  struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
-	
-  int pos = cbdata->ai->xai_OutPos;
-  xadHookAccess(XADAC_WRITE, n, buff, cbdata->ai);
-  
-  return (ssize_t)(cbdata->ai->xai_OutPos - pos);
-}
-
-int
-xad_rar_w_close(struct archive *a, void *client_data)
-{
-  struct callbackuserdata *cbdata = client_data;
-
-  return (ARCHIVE_OK);
-}
-
 ssize_t
 xad_rar_read(struct archive *a, void *client_data, const void **buff)
 {
@@ -153,8 +125,25 @@ la_int64_t xad_rar_skip(struct archive *a, void *client_data, int64_t request)
 }
 #endif
 
+la_ssize_t
+xad_rar_write_data(void *client_data, const void *buff, size_t n, int64_t offset)
+{
+  struct callbackuserdata *cbdata = client_data;
+  struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+	
+  int pos = cbdata->ai->xai_OutPos;
+  
+  if(pos != offset) {
+  	xadHookAccess(XADAC_OUTPUTSEEK, (uint32)(offset - pos), NULL, cbdata->ai);
+  }
+  
+  xadHookAccess(XADAC_WRITE, n, buff, cbdata->ai);
+  
+  return (ssize_t)(cbdata->ai->xai_OutPos - pos);
+}
+
 static int
-copy_data(struct archive *ar, struct archive *aw)
+copy_data(struct archive *ar, void *client_data) //struct archive *aw)
 {
 	int r;
 	const void *buff;
@@ -171,12 +160,13 @@ copy_data(struct archive *ar, struct archive *aw)
 			return (ARCHIVE_OK);
 		if (r != ARCHIVE_OK)
 			return (r);
-		r = archive_write_data_block(aw, buff, size, offset);
+		xad_rar_write_data(client_data, buff, size, offset);
+/*		r = archive_write_data_block(aw, buff, size, offset);
 		if (r != ARCHIVE_OK) {
 //			warn("archive_write_data_block()",
 //			    archive_error_string(aw));
 			return (r);
-		}
+		}*/
 	}
 }
 
@@ -354,32 +344,13 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		if(i == idx) {
 			// extract
 			err = XADERR_OK;
-			ext = archive_write_new();
-
-			#ifdef STREAMED_DATA			
-			archive_write_open(ext, cbdata, xad_rar_w_open, xad_rar_w_write, xad_rar_w_close);
-			#else
-			size_t used = 0;
-			outbuffer = xadAllocVec(archive_entry_size(entry), MEMF_PRIVATE);
-			archive_write_open_memory(ext, outbuffer, archive_entry_size(entry), &used); 
-			#endif
-			r = archive_write_header(ext, entry);
+			
+			r = copy_data(a, cbdata);
 			if (r != ARCHIVE_OK) {
 				err = arc_to_xad_error(r);
-				DebugPrintF("xad_rar error: %s", archive_error_string(ext));
+				DebugPrintF("xad_rar error: %s\n", archive_error_string(a));
 				break;
-			} else {
-				copy_data(a, ext);
-				r = archive_write_finish_entry(ext);
-				if (r != ARCHIVE_OK) {
-					err = arc_to_xad_error(r);
-					DebugPrintF("xad_rar error: %s", archive_error_string(ext));
-					break;
-				}
 			}
-			
-			archive_write_close(ext);
-			archive_write_free(ext);
 			
 			break;
 		}
