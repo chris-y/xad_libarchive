@@ -111,7 +111,7 @@ public:
 // Read via xadmaster.library
 class XAD_File_Reader : public File_Reader {
 #ifdef __amigaos4__
-	struct xadMasterIFace *IxadMaster;
+	struct XadMasterIFace *IXadMaster;
 #else
 	struct xadMasterBase *xadMasterBase;
 #endif
@@ -198,7 +198,7 @@ public:
 // Write using xadmaster.library
 class XAD_Writer : public Data_Writer {
 #ifdef __amigaos4__
-	struct xadMasterIFace *IxadMaster;
+	struct XadMasterIFace *IXadMaster;
 #else
 	struct xadMasterBase *xadMasterBase;
 #endif

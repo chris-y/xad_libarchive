@@ -49,13 +49,13 @@ const char *version = VERSTAG;
 
 #ifdef __amigaos4__
 BOOL rar_RecogData(ULONG size, STRPTR data,
-struct xadMasterIFace *IxadMaster)
+struct XadMasterIFace *IXadMaster)
 #else
 ASM(BOOL) rar_RecogData(REG(d0, ULONG size), REG(a0, STRPTR data),
 REG(a6, struct xadMasterBase *xadMasterBase))
 #endif
 {
-  if(data[0]=='R' & data[1]=='a' & data[2]=='r' & data[3]=='!')
+  if((data[0]=='R') & (data[1]=='a') & (data[2]=='r') & (data[3]=='!') & (data[4]==0x1A) & (data[5]==0x07) & (data[6]==0x00))
     return 1; /* known file */
   else
     return 0; /* unknown file */
@@ -63,7 +63,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 
 #ifdef __amigaos4__
 LONG rar_GetInfo(struct xadArchiveInfo *ai,
-struct xadMasterIFace *IxadMaster)
+struct XadMasterIFace *IXadMaster)
 #else
 ASM(LONG) rar_GetInfo(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase))
@@ -90,7 +90,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
 
 #ifdef __amigaos4__
-	filecounter = urarlib_list(&rarlist, IxadMaster, ai );
+	filecounter = urarlib_list(&rarlist, IXadMaster, ai );
 #else
 	filecounter = urarlib_list(&rarlist, xadMasterBase, ai );
 #endif
@@ -135,7 +135,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 
 #ifdef __amigaos4__
 LONG rar_UnArchive(struct xadArchiveInfo *ai,
-struct xadMasterIFace *IxadMaster)
+struct XadMasterIFace *IXadMaster)
 #else
 ASM(LONG) rar_UnArchive(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase))
@@ -160,7 +160,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	#endif
 	
 #ifdef __amigaos4__
-	if(!urarlib_get(&data_size, templist->item.Name, IxadMaster, ai))
+	if(!urarlib_get(&data_size, templist->item.Name, IXadMaster, ai))
 #else
 	if(!urarlib_get(&data_size, templist->item.Name, xadMasterBase, ai))
 #endif
@@ -173,7 +173,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 
 #ifdef __amigaos4__
 void rar_Free(struct xadArchiveInfo *ai,
-struct xadMasterIFace *IxadMaster)
+struct XadMasterIFace *IXadMaster)
 #else
 ASM(void) rar_Free(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase))

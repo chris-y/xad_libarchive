@@ -15,7 +15,7 @@ RM     = delete
 # Change these as required
 OPTIMIZE = -O3
 DEBUG = #-g -DDEBUG
-CXXFLAGS = $(OPTIMIZE) $(DEBUG) -Wall
+CXXFLAGS = $(OPTIMIZE) $(DEBUG) -Wall -D__USE_INLINE__
 
 # Flags passed to gcc during linking
 LINK =

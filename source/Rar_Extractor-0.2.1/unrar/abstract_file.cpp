@@ -221,7 +221,7 @@ error_t XAD_File_Reader::open( const char* path )
 XAD_File_Reader::XAD_File_Reader( void* l, struct xadArchiveInfo *a )
 {
 #ifdef __amigaos4__
-	IxadMaster = (struct xadMasterIFace *)l;
+	IXadMaster = (struct XadMasterIFace *)l;
 #else
 	xadMasterBase = (struct xadMasterBase *)l;
 #endif
@@ -333,7 +333,7 @@ error_t Null_Writer::write( const void*, long )
 XAD_Writer::XAD_Writer( void* l, struct xadArchiveInfo *a )
 {
 #ifdef __amigaos4__
-	IxadMaster = (struct xadMasterIFace *)l;
+	IXadMaster = (struct XadMasterIFace *)l;
 #else
 	xadMasterBase = (struct xadMasterBase *)l;
 #endif
