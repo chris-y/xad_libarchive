@@ -2,6 +2,6 @@ gcc  -Wall -O3  -mcrt=newlib -D__USE_INLINE__ -DNDEBUG   -c -o extheader.o exthe
 gcc  -Wall -O3  -mcrt=newlib -D__USE_INLINE__ -DNDEBUG   -c -o xad_rar.o xad_rar.c
 gcc  -Tdata=0 -O3 -mcrt=newlib -nostartfiles -o RAR extheader.o xad_rar.o -larchive
 ;strip RAR
-copy RAR libs:xad
+;copy RAR libs:xad
 expunge all
 

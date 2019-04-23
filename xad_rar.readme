@@ -1,33 +1,39 @@
-Short:        XAD (UnArc) client for RAR3 archives
+Short:        XAD (UnArc) client for RAR4 archives
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
-Author:       Chris Young, Stephan Matzke, Shay Green, Alexander L. Roshal
+Author:       Chris Young
 Type:         util/arc
-Version:      2.5
+Version:      3.1beta
 URL:          http://www.unsatisfactorysoftware.co.uk
-Architecture: ppc-amigaos; m68k-amigaos
+Architecture: ppc-amigaos
 
 This is a replacement for xadmaster.library's RAR client which supports
-RAR v3 archives.  However, it does not support MS self-extracting RARs
-and may be missing some other features.
+RAR v3 (also known as RAR4) archives.  However, it does not support MS
+self-extracting RARs (yet!) and may be missing some other features.
 
-It is built on top of (a modified version of) RAR_Extractor's simple
-unrarlib interface.  Source code is included.
+It is built on top of libarchive.  Source code is included.
 
 How to identify which version you are running
 ---------------------------------------------
 
 In the Shell, type xadLibInfo and search for the RAR line:
 
-RAR | ---- | 13 |  2.5  | FILE,EXTERN,FREE(FI)
+RAR | ---- | 13 |  3.1  | FILE,EXTERN,FREE(FI)
              ^^    ^^^
              |      |
 xadmaster version   client version
  12 = 68k build      1.x = original version
- 13 = OS4 build      2.x = RAR3 compatible (this one)
-
+ 13 = OS4 build      2.x = RAR4 compatible (RAR_Extractor)
+                     3.x = RAR4 compatible (this one)
 
 HISTORY
 =======
+
+3.1 (23.04.2019) [beta]
+Rewritten on top of libarchive, which hopefully should be more
+stable and supportable.
+
+2.6 (23.04.2019) [OS4]
+Fixed recog function to only identify pre-RAR5 archives
 
 2.5 (05.02.2012)
 Now lists the date, packed size and file attributes (file attributes
@@ -62,6 +68,3 @@ As usual, I can and will not accept responsibility for any damage,
 loss of data etc incurred through use of this software.  This archive
 is provided "as-is" without warranty of any kind and all use is at
 your own risk.
-
-Please check the PGP signature in the Aminet readme against the
-archive to ensure it has not been tampered with.

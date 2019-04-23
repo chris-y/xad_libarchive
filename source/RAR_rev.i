@@ -2,7 +2,7 @@ VERSION		EQU	3
 REVISION	EQU	1
 
 DATE	MACRO
-		dc.b '21.4.2019'
+		dc.b '23.4.2019'
 		ENDM
 
 VERS	MACRO
@@ -10,9 +10,9 @@ VERS	MACRO
 		ENDM
 
 VSTRING	MACRO
-		dc.b 'RAR 3.1 (21.4.2019)',13,10,0
+		dc.b 'RAR 3.1 (23.4.2019)',13,10,0
 		ENDM
 
 VERSTAG	MACRO
-		dc.b 0,'$VER: RAR 3.1 (21.4.2019)',0
+		dc.b 0,'$VER: RAR 3.1 (23.4.2019)',0
 		ENDM
