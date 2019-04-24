@@ -1,10 +1,5 @@
 /* XAD RAR client
  * by Chris Young <chris@unsatisfactorysoftware.co.uk>
- * and Stephan Matzke <stephan.matzke.adev@gmx.de>
- *
- * This client is built on a modified version of RAR_Extractor
- * by Shay Green which is based on the UnRAR source code
- * by Alexander L. Roshal.
  */
 
 #ifndef XADMASTER_RAR_C
@@ -31,6 +26,8 @@ struct Interface *INewlib;
 #include <proto/exec.h>
 #include <proto/utility.h>
 
+#include <libarchive/archive.h>
+#include <libarchive/archive_entry.h>
 
 #ifndef XADMASTERFILE
 #define rar_Client		FirstClient
@@ -47,6 +44,125 @@ const char *version = VERSTAG;
 #define MEMF_PRIVATE 0
 #endif
 
+long arc_to_xad_error(int err)
+{
+	switch(err) {
+		case ARCHIVE_EOF:
+			return XADERR_INPUT;
+		break;
+		case ARCHIVE_OK:
+			return XADERR_OK;
+		break;
+		case ARCHIVE_RETRY:
+			return XADERR_UNKNOWN;
+		break;
+		case ARCHIVE_WARN:
+			return XADERR_UNKNOWN;
+		break;
+		case ARCHIVE_FAILED:
+			return XADERR_UNKNOWN;
+		break;
+		case ARCHIVE_FATAL:
+			return XADERR_ILLEGALDATA;
+		break;
+	}
+	
+	return XADERR_UNKNOWN;
+}
+
+#ifdef STREAMED_DATA
+ssize_t
+xad_rar_read(struct archive *a, void *client_data, const void **buff)
+{
+  struct callbackuserdata *cbdata = client_data;
+	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+
+  int pos = cbdata->ai->xai_InPos;
+  
+  if(cbdata->inbuffer == NULL) {
+		cbdata->inbuffer = xadAllocVec(1024, MEMF_CLEAR);
+  }
+
+  xadHookAccess(XADAC_READ, 1024, cbdata->inbuffer, cbdata->ai);
+  *buff = cbdata->inbuffer;  
+  
+/*
+	struct ExecIFace *IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
+	DebugPrintF("read: %ld, pos: %ld, old pos: %ld\n", cbdata->ai->xai_InPos - pos, cbdata->ai->xai_InPos, pos);
+*/
+  
+  return (ssize_t)(cbdata->ai->xai_InPos - pos);
+}
+
+int
+xad_rar_close(struct archive *a, void *client_data)
+{
+  struct callbackuserdata *cbdata = client_data;
+	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+
+  if(cbdata->inbuffer != NULL) {
+		xadFreeObjectA(cbdata->inbuffer, NULL);
+		cbdata->inbuffer = NULL;
+  }
+
+    xadHookAccess(XADAC_INPUTSEEK, - cbdata->ai->xai_InPos, NULL, cbdata->ai);
+  
+  return (ARCHIVE_OK);
+}
+
+la_int64_t xad_rar_skip(struct archive *a, void *client_data, int64_t request)
+{
+	struct callbackuserdata *cbdata = client_data;
+	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+	
+	int pos = cbdata->ai->xai_InPos;
+	
+	xadHookAccess(XADAC_INPUTSEEK, (uint32)request, NULL, cbdata->ai);
+		
+	return (int64_t)(cbdata->ai->xai_InPos - pos);
+	
+}
+#endif
+
+la_ssize_t
+xad_rar_write_data(void *client_data, const void *buff, size_t n, int64_t offset)
+{
+  struct callbackuserdata *cbdata = client_data;
+  struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+	
+  int pos = cbdata->ai->xai_OutPos;
+  
+  if(pos != offset) {
+  	xadHookAccess(XADAC_OUTPUTSEEK, (uint32)(offset - pos), NULL, cbdata->ai);
+  }
+  
+  xadHookAccess(XADAC_WRITE, n, buff, cbdata->ai);
+  
+  return (ssize_t)(cbdata->ai->xai_OutPos - pos);
+}
+
+static int
+copy_data(struct archive *ar, void *client_data)
+{
+	int r;
+	const void *buff;
+	size_t size;
+#if ARCHIVE_VERSION_NUMBER >= 3000000
+	int64_t offset;
+#else
+	off_t offset;
+#endif
+
+	for (;;) {
+		r = archive_read_data_block(ar, &buff, &size, &offset);
+		if (r == ARCHIVE_EOF)
+			return (ARCHIVE_OK);
+		if (r != ARCHIVE_OK)
+			return (r);
+		xad_rar_write_data(client_data, buff, size, offset);
+	}
+}
+
 #ifdef __amigaos4__
 BOOL rar_RecogData(ULONG size, STRPTR data,
 struct XadMasterIFace *IXadMaster)
@@ -55,9 +171,17 @@ ASM(BOOL) rar_RecogData(REG(d0, ULONG size), REG(a0, STRPTR data),
 REG(a6, struct xadMasterBase *xadMasterBase))
 #endif
 {
-  if((data[0]=='R') & (data[1]=='a') & (data[2]=='r') & (data[3]=='!') & (data[4]==0x1A) & (data[5]==0x07) & (data[6]==0x00))
-    return 1; /* known file */
-  else
+  if((data[0]=='R') & (data[1]=='a') & (data[2]=='r') & (data[3]=='!') & (data[4]==0x1A) & (data[5]==0x07)) {
+#ifdef XAD_RAR5
+	if((data[6]==0x01) & (data[7]=0x00))
+		return 1; /* known file */
+#endif
+#ifdef XAD_RAR4
+	if((data[6]==0x00))
+		return 1; /* known file */
+#endif
+  }
+
     return 0; /* unknown file */
 }
 
@@ -71,10 +195,10 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 {
 	struct xadrarprivate *xadrar;
 	struct xadFileInfo *fi;
-	long err=XADERR_OK,filecounter;
-	ArchiveList_struct *rarlist = NULL;
-	ArchiveList_struct *templist = NULL;
-	int i;
+	long err=XADERR_OK;
+	struct callbackuserdata *cbdata;
+	struct archive *a;
+	struct archive_entry *entry;
 
 	#ifdef __amigaos4__
     IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
@@ -85,51 +209,80 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	#else
 		libnixopen();
 	#endif
-		
-	ai->xai_PrivateClient = xadAllocVec(sizeof(struct xadrarprivate),MEMF_PRIVATE | MEMF_CLEAR);
-	xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
-
-#ifdef __amigaos4__
-	filecounter = urarlib_list(&rarlist, IXadMaster, ai );
-#else
-	filecounter = urarlib_list(&rarlist, xadMasterBase, ai );
+	
+	a = archive_read_new();
+#ifdef XAD_RAR4
+	archive_read_support_format_rar(a);
+#endif
+#ifdef XAD_RAR5
+	archive_read_support_format_rar5(a);
 #endif
 
-	xadrar->List = rarlist;  // might need this later
-	templist = rarlist;
+	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
+	
+#ifdef STREAMED_DATA
+	cbdata->ai = ai;
+	cbdata->IxadMaster = IxadMaster;
 
-	for (i = 0; i < filecounter; i++)
-	{
-		fi = (struct xadFileInfo *) xadAllocObjectA(XADOBJ_FILEINFO, NULL);
+	archive_read_open2(a, cbdata, NULL, xad_rar_read, xad_rar_skip, xad_rar_close);
+#else
+	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
+	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
+
+	archive_read_open_memory(a, cbdata->inbuffer, ai->xai_InSize);
+
+#endif
+
+	int i = 0;
+
+	while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+	  	fi = (struct xadFileInfo *) xadAllocObjectA(XADOBJ_FILEINFO, NULL);
 		if (!fi) return(XADERR_NOMEMORY);
-
-		fi->xfi_PrivateInfo = templist;
+		
+		fi->xfi_PrivateInfo = i;
 		fi->xfi_DataPos = 0;
-		fi->xfi_Size = templist->item.UnpSize;
+		fi->xfi_Size = archive_entry_size(entry);
 		if (!(fi->xfi_FileName = xadConvertName(CHARSET_HOST,
-							XAD_STRINGSIZE,templist->item.NameSize,
-							XAD_CSTRING,templist->item.Name,
+						//	XAD_CHARACTERSET, CHARSET_UNICODE_UTF8,
+						//	XAD_STRINGSIZE,strlen(archive_entry_pathname(entry)),
+							XAD_CSTRING, archive_entry_pathname(entry),
 							TAG_DONE))) return(XADERR_NOMEMORY);
 
-		xadConvertDates(XAD_DATEMSDOS,templist->item.FileTime,
+		xadConvertDates(XAD_DATEUNIX,archive_entry_mtime(entry),
 					XAD_GETDATEXADDATE,&fi->xfi_Date,
 					TAG_DONE);
 
-		fi->xfi_DosProtect = templist->item.FileAttr;
+//		fi->xfi_DosProtect = templist->item.FileAttr;    archive_entry_perm???
 
-		fi->xfi_CrunchSize  = templist->item.PackSize; //(long) (db->Database.PackSizes[i] << 32); //fi->xfi_Size;
+//		fi->xfi_CrunchSize  = templist->item.PackSize; //(long) (db->Database.PackSizes[i] << 32); //fi->xfi_Size;
 
 		fi->xfi_Flags = 0;
 
-		if(templist->item.FileAttr == 16)
+		if(archive_entry_filetype(entry) & AE_IFDIR)
 		{
 			fi->xfi_Flags |= XADFIF_DIRECTORY;
 		}
 
 		if ((err = xadAddFileEntryA(fi, ai, NULL))) return(XADERR_NOMEMORY);
-		templist = (ArchiveList_struct*)templist->next;
-    }
+		
+		
+		i++;
+	}
 
+	archive_read_close(a);
+	archive_read_free(a);
+  
+  	if(cbdata) {
+		if(cbdata->inbuffer != NULL) {
+			xadFreeObjectA(cbdata->inbuffer, NULL);
+			cbdata->inbuffer = NULL;
+		}
+		
+		xadFreeObjectA(cbdata, NULL);
+		cbdata = NULL;
+	}
+  
+  
 	return(err);
 }
 
@@ -143,9 +296,14 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 {
 	struct xadrarprivate *xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
   	struct xadFileInfo *fi = ai->xai_CurFile;
-	long err=XADERR_OK;
-	ULONG data_size = 0;
-	ArchiveList_struct *templist = (ArchiveList_struct *)fi->xfi_PrivateInfo;
+	long err=XADERR_DECRUNCH;
+	struct archive *a;
+	struct archive *ext;
+	struct archive_entry *entry;
+	int idx = fi->xfi_PrivateInfo;
+	int r;
+	struct callbackuserdata *cbdata;
+	UBYTE *outbuffer = NULL;
 
 	#ifdef __amigaos4__
 	if(!newlibbase)
@@ -159,15 +317,71 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 		libnixopen();
 	#endif
 	
-#ifdef __amigaos4__
-	if(!urarlib_get(&data_size, templist->item.Name, IXadMaster, ai))
-#else
-	if(!urarlib_get(&data_size, templist->item.Name, xadMasterBase, ai))
+	xadHookAccess(XADAC_INPUTSEEK, - ai->xai_InPos, NULL, ai);
+	
+	a = archive_read_new();
+#ifdef XAD_RAR4
+	archive_read_support_format_rar(a);
 #endif
-	{
-		err=XADERR_UNKNOWN;
-	}
+#ifdef XAD_RAR5
+	archive_read_support_format_rar5(a);
+#endif
 
+	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
+	
+#ifdef STREAMED_DATA
+	cbdata->ai = ai;
+	cbdata->IxadMaster = IxadMaster;
+
+	archive_read_open2(a, cbdata, NULL, xad_rar_read, xad_rar_skip, xad_rar_close);
+#else
+	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
+	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
+
+	archive_read_open_memory(a, cbdata->inbuffer, ai->xai_InSize);
+
+#endif
+	
+	int i = 0;
+
+	while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+		if(i == idx) {
+			// extract
+			err = XADERR_OK;
+			
+			r = copy_data(a, cbdata);
+			if (r != ARCHIVE_OK) {
+				err = arc_to_xad_error(r);
+				DebugPrintF("xad_rar error: %s\n", archive_error_string(a));
+				break;
+			}
+			
+			break;
+		}
+
+		i++;
+	}
+	
+	archive_read_close(a);
+	archive_read_free(a);
+	
+#ifndef STREAMED_DATA
+	if(outbuffer != NULL) {
+		xadFreeObjectA(outbuffer, NULL);
+		outbuffer = NULL;
+	}
+#endif			
+	
+  	if(cbdata) {
+		if(cbdata->inbuffer != NULL) {
+			xadFreeObjectA(cbdata->inbuffer, NULL);
+			cbdata->inbuffer = NULL;
+		}
+		
+		xadFreeObjectA(cbdata, NULL);
+		cbdata = NULL;
+	}
+  
 	return(err);
 }
 
@@ -183,10 +397,6 @@ REG(a6, struct xadMasterBase *xadMasterBase))
   unarchive function. It may be called multiple times, so clear freed
   entries!
   */
-
-	struct xadrarprivate *xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
-
-	urarlib_freelist(xadrar->List);
 
 	xadFreeObjectA(ai->xai_PrivateClient,NULL);
 	ai->xai_PrivateClient = NULL;
@@ -205,7 +415,7 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 const struct xadClient rar_Client = {
 NEXTCLIENT, XADCLIENT_VERSION, XADMASTERVERSION, VERSION, REVISION,
 6, XADCF_FILEARCHIVER|XADCF_FREEFILEINFO|XADCF_FREEXADSTRINGS,
-0 /* Type identifier. Normally should be zero */, "RAR",
+0 /* Type identifier. Normally should be zero */, XAD_MOD_NAME,
 (BOOL (*)()) rar_RecogData, (LONG (*)()) rar_GetInfo,
 (LONG (*)()) rar_UnArchive, (void (*)()) rar_Free };
 
