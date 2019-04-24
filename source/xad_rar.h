@@ -2,8 +2,8 @@
  * Chris Young <chris@unsatisfactorysoftware.co.uk>
  */
 
-#ifndef XADMASTER_RAR_H
-#define XADMASTER_RAR_H
+#ifndef XAD_LIBARCHIVE_RAR_H
+#define XAD_LIBARCHIVE_RAR_H 1
 
 /* define these to support RAR4 or RAR5 or both
  * RAR4 is also known as RAR3 and seems to have issues
@@ -11,9 +11,6 @@
  */
 #define XAD_RAR4 1 /* we used to call this RAR3 */
 //#define XAD_RAR5 1
-
-/* set to stream data rather than reading all in memory */
-#define STREAMED_DATA 1
 
 #ifdef XAD_RAR5
 #ifdef XAD_RAR4
@@ -28,23 +25,5 @@
 #error One of XAD_RAR4 or XAD_RAR5 must be defined
 #endif
 #endif
-
-#include "RAR_rev.h"
-
-#include <libarchive/archive.h>
-
-struct callbackuserdata {
-#ifdef STREAMED_DATA
-	struct xadArchiveInfo *ai;
-	struct xadMasterIFace *IxadMaster;
-#endif
-	char *inbuffer;
-};
-
-struct xadrarprivate {
-	int idx;
-	struct archive *a;
-	struct callbackuserdata *cbdata;
-};
 
 #endif
