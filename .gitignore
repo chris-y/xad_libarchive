@@ -51,5 +51,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Binaries in build dir
 source/RAR
-
+source/Zip
