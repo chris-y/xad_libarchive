@@ -5,8 +5,6 @@
 #ifndef XADMASTER_ZIP_C
 #define XADMASTER_ZIP_C
 
-#include "xad_zip.h"
-
 #include "Zip_rev.h"
 
 #ifndef XADMASTERFILE

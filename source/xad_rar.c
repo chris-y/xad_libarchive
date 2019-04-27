@@ -5,8 +5,6 @@
 #ifndef XADMASTER_RAR_C
 #define XADMASTER_RAR_C
 
-#include "xad_rar.h"
-
 #include "RAR_rev.h"
 
 #ifndef XADMASTERFILE
