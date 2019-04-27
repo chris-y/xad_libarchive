@@ -48,7 +48,7 @@ long arc_to_xad_error(int err)
 
 #ifdef STREAMED_DATA
 ssize_t
-xad_rar_read(struct archive *a, void *client_data, const void **buff)
+xad_read(struct archive *a, void *client_data, const void **buff)
 {
   struct callbackuserdata *cbdata = client_data;
 	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
@@ -71,7 +71,7 @@ xad_rar_read(struct archive *a, void *client_data, const void **buff)
 }
 
 int
-xad_rar_close(struct archive *a, void *client_data)
+xad_close(struct archive *a, void *client_data)
 {
   struct callbackuserdata *cbdata = client_data;
 	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
@@ -86,7 +86,7 @@ xad_rar_close(struct archive *a, void *client_data)
   return (ARCHIVE_OK);
 }
 
-la_int64_t xad_rar_skip(struct archive *a, void *client_data, int64_t request)
+la_int64_t xad_skip(struct archive *a, void *client_data, int64_t request)
 {
 	struct callbackuserdata *cbdata = client_data;
 	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
@@ -101,7 +101,7 @@ la_int64_t xad_rar_skip(struct archive *a, void *client_data, int64_t request)
 #endif
 
 la_ssize_t
-xad_rar_write_data(void *client_data, const void *buff, size_t n, int64_t offset)
+xad_write_data(void *client_data, const void *buff, size_t n, int64_t offset)
 {
   struct callbackuserdata *cbdata = client_data;
   struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
@@ -135,7 +135,7 @@ copy_data(struct archive *ar, void *client_data)
 			return (ARCHIVE_OK);
 		if (r != ARCHIVE_OK)
 			return (r);
-		xad_rar_write_data(client_data, buff, size, offset);
+		xad_write_data(client_data, buff, size, offset);
 	}
 }
 
@@ -174,7 +174,8 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	cbdata->ai = ai;
 	cbdata->IxadMaster = IXadMaster;
 
-	archive_read_open2(a, cbdata, NULL, xad_rar_read, xad_rar_skip, xad_rar_close);
+	archive_read_open2(a, cbdata, NULL, xad_read, xad_skip, xad_close);
+//	archive_read_set_seek_callback();
 #else
 	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
@@ -279,7 +280,7 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	cbdata->ai = ai;
 	cbdata->IxadMaster = IXadMaster;
 
-	archive_read_open2(a, cbdata, NULL, xad_rar_read, xad_rar_skip, xad_rar_close);
+	archive_read_open2(a, cbdata, NULL, xad_read, xad_skip, xad_close);
 #else
 	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
