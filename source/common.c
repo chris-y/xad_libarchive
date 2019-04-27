@@ -147,7 +147,6 @@ ASM(LONG) rar_GetInfo(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct archive *a))
 #endif
 {
-	struct xadrarprivate *xadrar;
 	struct xadFileInfo *fi;
 	long err=XADERR_OK;
 	struct callbackuserdata *cbdata;
@@ -245,7 +244,6 @@ ASM(LONG) xad_common_UnArchive(REG(a0, struct xadArchiveInfo *ai),
 REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct archive *a)))
 #endif
 {
-	struct xadrarprivate *xadrar = (struct xadrarprivate *)ai->xai_PrivateClient;
   	struct xadFileInfo *fi = ai->xai_CurFile;
 	long err=XADERR_DECRUNCH;
 	struct archive *a;
@@ -275,11 +273,10 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	read_support_func(a);
 
 	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
-	
-#ifdef STREAMED_DATA
 	cbdata->ai = ai;
 	cbdata->IxadMaster = IXadMaster;
 
+#ifdef STREAMED_DATA
 	archive_read_open2(a, cbdata, NULL, xad_read, xad_skip, xad_close);
 #else
 	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
@@ -299,7 +296,7 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 			r = copy_data(a, cbdata);
 			if (r != ARCHIVE_OK) {
 				err = arc_to_xad_error(r);
-				DebugPrintF("xad_rar error: %s\n", archive_error_string(a));
+				DebugPrintF("xad_libarchive error: %s\n", archive_error_string(a));
 				break;
 			}
 			
