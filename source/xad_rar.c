@@ -5,7 +5,11 @@
 #ifndef XADMASTER_RAR_C
 #define XADMASTER_RAR_C
 
+#define XAD_RAR4
+//#define XAD_RAR5
+
 #include "RAR_rev.h"
+#include "macros.h"
 
 #ifndef XADMASTERFILE
 #define rar_Client		FirstClient
@@ -36,6 +40,6 @@ XAD_MACRO_RECOGFILE(rar)
 
 XAD_MACRO_GETINFO(rar)
 XAD_MACRO_UNARCHIVE(rar)
-XAD_MACRO_CLIENT(rar, "RAR")
+XAD_MACRO_CLIENT(rar, "RAR", 0)
 
 #endif /* XADMASTER_RAR_C */

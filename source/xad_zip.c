@@ -6,6 +6,7 @@
 #define XADMASTER_ZIP_C
 
 #include "Zip_rev.h"
+#include "macros.h"
 
 #ifndef XADMASTERFILE
 #define zip_Client		FirstClient
@@ -29,6 +30,6 @@ XAD_MACRO_RECOGFILE(zip)
 
 XAD_MACRO_GETINFO(zip)
 XAD_MACRO_UNARCHIVE(zip)
-XAD_MACRO_CLIENT(zip, "Zip")
+XAD_MACRO_CLIENT(zip, "Zip", XADCID_ZIP)
 
 #endif /* XADMASTER_ZIP_C */

@@ -24,7 +24,6 @@ struct Interface *INewlib;
 #include "SDI_compiler.h"
 #include "common.h"
 
-#include "macros.h"
 #include <proto/exec.h>
 #include <proto/utility.h>
 
@@ -45,10 +44,10 @@ struct Interface *INewlib;
 		return xad_common_UnArchive(ai, IXadMaster, &archive_read_support_format_##CLIENT);	\
 	}
 	
-#define XAD_MACRO_CLIENT(CLIENT,MODNAME) const struct xadClient CLIENT##_Client = {	\
+#define XAD_MACRO_CLIENT(CLIENT,MODNAME,REPLACE) const struct xadClient CLIENT##_Client = {	\
 	NEXTCLIENT, XADCLIENT_VERSION, XADMASTERVERSION, VERSION, REVISION,	\
 	6, XADCF_FILEARCHIVER|XADCF_FREEFILEINFO|XADCF_FREEXADSTRINGS,	\
-	0 /* Type identifier. Normally should be zero */, MODNAME,	\
+	REPLACE /* Type identifier. Normally should be zero */, MODNAME,	\
 	(BOOL (*)()) CLIENT##_RecogData, (LONG (*)()) CLIENT##_GetInfo,	\
 	(LONG (*)()) CLIENT##_UnArchive, (void (*)()) xad_common_Free };
 	
