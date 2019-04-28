@@ -8,6 +8,9 @@
 /* set to stream data rather than reading all in memory */
 #define STREAMED_DATA 1
 
+/* also use seek callback */
+//#define SEEK_CALLBACK 1
+
 /* maximum amount of data to read at a time */
 #define MAXCHUNKSIZE 1024
 

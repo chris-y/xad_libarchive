@@ -47,7 +47,7 @@ long arc_to_xad_error(int err)
 }
 
 #ifdef STREAMED_DATA
-ssize_t
+static ssize_t
 xad_read(struct archive *a, void *client_data, const void **buff)
 {
   struct callbackuserdata *cbdata = client_data;
@@ -74,7 +74,7 @@ xad_read(struct archive *a, void *client_data, const void **buff)
   return (ssize_t)(cbdata->ai->xai_InPos - pos);
 }
 
-int
+static int
 xad_close(struct archive *a, void *client_data)
 {
   struct callbackuserdata *cbdata = client_data;
@@ -90,7 +90,7 @@ xad_close(struct archive *a, void *client_data)
   return (ARCHIVE_OK);
 }
 
-la_int64_t xad_skip(struct archive *a, void *client_data, int64_t request)
+static la_int64_t xad_skip(struct archive *a, void *client_data, int64_t request)
 {
 	struct callbackuserdata *cbdata = client_data;
 	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
@@ -109,9 +109,47 @@ la_int64_t xad_skip(struct archive *a, void *client_data, int64_t request)
 	return (int64_t)(cbdata->ai->xai_InPos - pos);
 	
 }
+
+#ifdef SEEK_CALLBACK
+static la_int64_t xad_seek(struct archive *a, void *client_data, int64_t offset, int whence)
+{
+	struct callbackuserdata *cbdata = client_data;
+	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
+	
+	int pos = cbdata->ai->xai_InPos;
+	
+	switch(whence) {
+		case SEEK_SET:
+			if(offset > cbdata->ai->xai_InSize) return ARCHIVE_FATAL;
+			xadHookAccess(XADAC_INPUTSEEK, (uint32)offset - pos, NULL, cbdata->ai);
+		break;
+		
+		case SEEK_CUR:
+			if((cbdata->ai->xai_InPos + offset) > cbdata->ai->xai_InSize) return ARCHIVE_FATAL;
+			xadHookAccess(XADAC_INPUTSEEK, (uint32)offset, NULL, cbdata->ai);
+		break;
+		
+		case SEEK_END:
+			xadHookAccess(XADAC_INPUTSEEK, (uint32)offset + cbdata->ai->xai_InSize - pos, NULL, cbdata->ai);
+		break;
+		
+		default:
+			return ARCHIVE_FATAL;
+		break;
+	}
+	
+//#ifdef DEBUG
+	struct ExecIFace *IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
+	DebugPrintF("seek: %ld, pos: %ld, old pos: %ld, orig req: %lld / %lx\n", cbdata->ai->xai_InPos - pos, cbdata->ai->xai_InPos, pos, offset, whence);
+//#endif
+
+	return ARCHIVE_OK; //(int64_t)(cbdata->ai->xai_InPos - pos);
+	
+}
+#endif
 #endif
 
-la_ssize_t
+static la_ssize_t
 xad_write_data(void *client_data, const void *buff, size_t n, int64_t offset)
 {
   struct callbackuserdata *cbdata = client_data;
@@ -185,7 +223,9 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	cbdata->IxadMaster = IXadMaster;
 
 	archive_read_open2(a, cbdata, NULL, xad_read, xad_skip, xad_close);
-//	archive_read_set_seek_callback();
+#ifdef SEEK_CALLBACK
+	archive_read_set_seek_callback(a, xad_seek);
+#endif
 #else
 	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
@@ -289,6 +329,9 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 
 #ifdef STREAMED_DATA
 	archive_read_open2(a, cbdata, NULL, xad_read, xad_skip, xad_close);
+#ifdef SEEK_CALLBACK
+	archive_read_set_seek_callback(a, xad_seek);
+#endif
 #else
 	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
