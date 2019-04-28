@@ -1,7 +1,0 @@
-m68k-amigaos-gcc -Wall -O3 -D__USE_INLINE__ -DNDEBUG   -c -o extheader.o extheader.c -noixemul
-m68k-amigaos-gcc -Wall -O3 -D__USE_INLINE__ -DNDEBUG   -c -o xad_rar.o xad_rar.c -noixemul
-m68k-amigaos-gcc -Wall -O3 -D__USE_INLINE__ -DNDEBUG   -c -o libnixstuff.o libnixstuff.c -noixemul
-m68k-amigaos-gcc -nostartfiles -o RAR extheader.o xad_rar.o libnixstuff.o -larchive -lstdc++ -noixemul
-;copy RAR libs:xad
-;flush
-

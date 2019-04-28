@@ -55,3 +55,4 @@ dkms.conf
 source/RAR
 source/RAR5
 source/Zip
+source/libarchive
