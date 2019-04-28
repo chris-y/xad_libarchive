@@ -6,7 +6,10 @@
 #define XAD_LIBARCHIVE_COMMON_H 1
 
 /* set to stream data rather than reading all in memory */
-//#define STREAMED_DATA 1
+#define STREAMED_DATA 1
+
+/* maximum amount of data to read at a time */
+#define MAXCHUNKSIZE 1024
 
 #include <proto/xadmaster.h>
 #include <exec/types.h>

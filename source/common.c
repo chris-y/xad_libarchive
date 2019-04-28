@@ -53,19 +53,23 @@ xad_read(struct archive *a, void *client_data, const void **buff)
   struct callbackuserdata *cbdata = client_data;
 	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
 
+	int size = MAXCHUNKSIZE;
+	
   int pos = cbdata->ai->xai_InPos;
   
   if(cbdata->inbuffer == NULL) {
-		cbdata->inbuffer = xadAllocVec(1024, MEMF_CLEAR);
+		cbdata->inbuffer = xadAllocVec(MAXCHUNKSIZE, MEMF_CLEAR);
   }
 
-  xadHookAccess(XADAC_READ, 1024, cbdata->inbuffer, cbdata->ai);
+  	if((cbdata->ai->xai_InSize - pos) < size) size = (cbdata->ai->xai_InSize - pos);
+  
+  xadHookAccess(XADAC_READ, size, cbdata->inbuffer, cbdata->ai);
   *buff = cbdata->inbuffer;  
   
-/*
+#ifdef DEBUG
 	struct ExecIFace *IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
 	DebugPrintF("read: %ld, pos: %ld, old pos: %ld\n", cbdata->ai->xai_InPos - pos, cbdata->ai->xai_InPos, pos);
-*/
+#endif
   
   return (ssize_t)(cbdata->ai->xai_InPos - pos);
 }
@@ -93,8 +97,15 @@ la_int64_t xad_skip(struct archive *a, void *client_data, int64_t request)
 	
 	int pos = cbdata->ai->xai_InPos;
 	
+	if((cbdata->ai->xai_InSize - pos) < request) request = (cbdata->ai->xai_InSize - pos);
+	
 	xadHookAccess(XADAC_INPUTSEEK, (uint32)request, NULL, cbdata->ai);
-		
+
+#ifdef DEBUG
+	struct ExecIFace *IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
+	DebugPrintF("skip: %ld, pos: %ld, old pos: %ld, orig req: %lld\n", cbdata->ai->xai_InPos - pos, cbdata->ai->xai_InPos, pos, request);
+#endif
+
 	return (int64_t)(cbdata->ai->xai_InPos - pos);
 	
 }
