@@ -6,7 +6,7 @@
 #include "macros.h"
 
 #ifndef XADMASTERFILE
-#if defined(CLIENT_RAR5)
+#ifdef CLIENT_RAR5
 	#define rar5_Client		FirstClient
 #else
 	#ifdef CLIENT_ZIP
@@ -14,7 +14,7 @@
 	#endif
 #endif
 #ifdef CLIENT_ZIP
-#define rar5_NextClient	zip_Client
+#define rar5_NextClient	&zip_Client
 #else
 #define rar5_NextClient 0
 #endif
@@ -53,5 +53,5 @@ XAD_MACRO_RECOGFILE(rar5)
 
 XAD_MACRO_GETINFO(rar5)
 XAD_MACRO_UNARCHIVE(rar5)
-XAD_MACRO_CLIENT(rar5, "RAR5", 0, &rar5_NextClient)
+XAD_MACRO_CLIENT(rar5, "RAR5", 0, rar5_NextClient)
 #endif

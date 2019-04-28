@@ -1,0 +1,66 @@
+Short:        XAD (UnArc) client for RAR5/ZIPX archives
+Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
+Author:       Chris Young
+Type:         util/arc
+Version:      3.1
+URL:          http://www.unsatisfactorysoftware.co.uk
+Architecture: ppc-amigaos
+
+This is a xadmaster client for extraction of archives using
+libarchive.  It currently supports RAR5 and ZIPX files.
+
+Note that the optional Zip portion, unlike the built-in version,
+does not yet support encryption or self-extracting archives.
+Self-extracting archives are still handled with the built-in
+Zip client even with this installed.
+
+
+How to identify which version you are running
+---------------------------------------------
+
+In the Shell, type xadLibInfo:
+
+Zip                       | 5016 | 13 |  3.1  | FILE,EXTERN,FREE(FI)
+RAR5                      | ---- | 13 |  3.1  | FILE,EXTERN,FREE(FI)
+                                         ^^^
+                                          |
+                                    client version
+
+Any lines with version numbers not matching that on this readme
+do not come from this client.
+
+Importantly, the Zip line may look like this:
+Zip                       | 5016 | 13 |  1.12 | FILE
+
+This is the Zip client built in to xadmaster.library.
+
+You may also have a RAR (not RAR5) client:
+RAR                       | ---- | 13 |  2.6  | FILE,EXTERN,FREE(FI)
+
+If this is version 1.x then RAR4 files are not supported.
+If it is version 2.x it may conflict and will need updating to v2.6.
+The install script will handle this for you.
+
+Due to compatibility issues, the libarchive client does not yet
+support RAR4 files, so you still need a client specifically for RAR4.
+
+
+HISTORY
+=======
+
+3.1 (28.04.2019)
+First release.
+Version number starts at 3 as the intention was to obsolete the
+previous RAR client.
+
+
+----
+Please note the primary download location for my software is Aminet
+(http://www.aminet.net).  If you obtained this archive from anywhere
+else, please check Aminet and AmiUpdate (http://www.amiupdate.net) for
+newer versions.
+
+As usual, I can and will not accept responsibility for any damage,
+loss of data etc incurred through use of this software.  This archive
+is provided "as-is" without warranty of any kind and all use is at
+your own risk.

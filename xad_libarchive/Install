@@ -1,0 +1,73 @@
+(if (= @app-name "XADlibarchiveAutoInstall") (set #AutoInstall 1))
+
+(set @default-dest "libs:xad")
+
+(if (= #AutoInstall 1)
+	(
+; this bit is obviously wrong.
+; we need to determine which components the user installed last time
+; and update with the correct build.
+		(set #rar (getversion "libs:xad/RAR"))
+
+		(if (= (/ (getversion "libs:xad/RAR") 65536) 1)
+			(
+				(message "XAD RAR AutoInstall - PLEASE READ\n\n"
+				"You have selected to update the XAD RAR client, "
+				"however the version on your system is the original "
+        		"one which ships with OS4.  If you proceed it will "
+				"be updated with a version written by a different "
+                "party, which may not support all the features of "
+                "the original.\n\n"
+				"This client DOES NOT support: MS self-extracting RARs.\n"
+				"However, it DOES support: RAR3 archives.\n\n"
+				"If you decide to proceed, you can revert back to the "
+				"original at any time using AmiUpdate's System_Rollback "
+				"application."  (all))
+			)
+		)
+
+		(run "CopyStore RAR/RAR libs:xad")
+		(exit (quiet))
+	)
+	;else
+	(
+		(welcome)
+
+		(set #components
+			(askchoice
+				(prompt "Please select which features you want.\n"
+				"ZIPX may cause loss of features if you only deal with "
+				"normal Zip files.  For example, it does not support encryption.")
+				(help @askchoice-help)
+				(choices "RAR5"
+						"RAR5+ZIPX")
+				(default 0)
+			)
+		)
+
+		(set #src-dir "RAR5")
+		(if (= #components 1) (set #src-dir "RAR5_ZIP"))
+
+		(copylib
+			(prompt "Check client is newer than any existing version!")
+			(help @copylib-help)
+			(source (tackon #src-dir "libarchive"))
+			(dest @default-dest)
+			(confirm "expert")
+		)
+
+		(copylib
+			(prompt "Due to a recognition bug in RAR client 2.x, "
+			"you must update this to v2.6 to ensure the RAR5 client "
+			"works correctly.  If you have v1.x, this is the original "
+			"which came with xadmaster.library, and doesn't support "
+			"RAR4 archives.  It is recommended to update.")
+			(help "More information is available at https://www.unsatisfactorysoftware.co.uk/download.php?file=xad_rar\n\n" @copylib-help)
+			(source "RAR/RAR")
+			(dest @default-dest)
+			(confirm "expert")
+		)
+
+		(exit "You must reboot for the client to take effect." (quiet))
+	)
+)

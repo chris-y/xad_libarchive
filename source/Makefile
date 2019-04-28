@@ -1,14 +1,18 @@
 CLIENTS := -DCLIENT_RAR5 -DCLIENT_ZIP
-CFLAGS  := -Wall -Tdata=0 -O3 -mcrt=newlib -nostartfiles -D__USE_INLINE__ $(CLIENTS)
-LIBS    := -larchive -lz -llzma -lbz2
-SRCS    := extheader_os4.c common.c client.c
 DEBUG   :=
+#-gstabs
+CFLAGS  := -Wall -D__USE_INLINE__ $(CLIENTS) $(DEBUG)
+LDFLAGS := -Tdata=0 -O3 -nostartfiles
+LIBS    := -larchive -lz -llzma -lbz2
+OBJS    := extheader_os4.o common.o client.o
 
 .PHONY: all
 all: libarchive
 
-libarchive: $(SRCS)
-	gcc $(CFLAGS) $(DEBUG) -o $@ $(SRCS) $(LIBS) 
+$(OBJS): $(OBJS:.o=.c)
+
+libarchive: $(OBJS)
+	gcc $(LDFLAGS) -o $@ $(OBJS) $(LIBS) 
 #	strip $@
 #	strip -R.comment $@
 #	strip -R.comment `nm -u $@ | sed "s/U /-K/"` $@
