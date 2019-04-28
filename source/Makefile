@@ -1,8 +1,8 @@
-CLIENTS := -DCLIENT_RAR5 -DCLIENT_ZIP
+CLIENTS := -DCLIENT_RAR5 #-DCLIENT_ZIP
 DEBUG   :=
 #-gstabs
-CFLAGS  := -Wall -D__USE_INLINE__ $(CLIENTS) $(DEBUG)
-LDFLAGS := -Tdata=0 -O3 -nostartfiles
+CFLAGS  := -Wall -O3 -D__USE_INLINE__ $(CLIENTS) $(DEBUG)
+LDFLAGS := -Tdata=0 -nostartfiles
 LIBS    := -larchive -lz -llzma -lbz2
 OBJS    := extheader_os4.o common.o client.o
 
