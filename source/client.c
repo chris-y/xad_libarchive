@@ -7,11 +7,17 @@
 
 #ifndef XADMASTERFILE
 #if defined(CLIENT_RAR5)
-#define rar5_Client		FirstClient
-#else if defined(CLIENT_ZIP)
-#define zip_Client		FirstClient
+	#define rar5_Client		FirstClient
+#else
+	#ifdef CLIENT_ZIP
+		#define zip_Client		FirstClient
+	#endif
 #endif
-//const struct xadClient *nextclient = NULL;
+#ifdef CLIENT_ZIP
+#define rar5_NextClient	zip_Client
+#else
+#define rar5_NextClient 0
+#endif
 #ifdef __amigaos4__
 #define XADMASTERVERSION	13
 #else
@@ -33,7 +39,6 @@ XAD_MACRO_RECOGFILE(zip)
 XAD_MACRO_GETINFO(zip)
 XAD_MACRO_UNARCHIVE(zip)
 XAD_MACRO_CLIENT(zip, "Zip", XADCID_ZIP, 0)
-//nextclient = (struct xadClient *)&zip_Client;
 #endif
 
 #ifdef CLIENT_RAR5
@@ -48,6 +53,5 @@ XAD_MACRO_RECOGFILE(rar5)
 
 XAD_MACRO_GETINFO(rar5)
 XAD_MACRO_UNARCHIVE(rar5)
-XAD_MACRO_CLIENT(rar5, "RAR5", 0, &zip_Client)
-//nextclient = (struct xadClient *)NULL;
+XAD_MACRO_CLIENT(rar5, "RAR5", 0, &rar5_NextClient)
 #endif
