@@ -2,9 +2,6 @@
  * (c) 2019 Chris Young <chris@unsatisfactorysoftware.co.uk>
  */
 
-struct ExecIFace *IExec;
-struct Library *newlibbase;
-struct Interface *INewlib;
 #include "sys/types.h"
  
 #include "common.h"
@@ -15,6 +12,11 @@ struct Interface *INewlib;
 
 #include <libarchive/archive.h>
 #include <libarchive/archive_entry.h>
+
+struct Library *SysBase;
+struct ExecIFace *IExec;
+struct Library *newlibbase;
+struct Interface *INewlib;
  
  #ifndef MEMF_PRIVATE
 #define MEMF_PRIVATE 0
@@ -263,6 +265,10 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 		{
 			fi->xfi_Flags |= XADFIF_DIRECTORY;
 		}
+		
+		if(archive_entry_is_encrypted(entry)) {
+			fi->xfi_Flags |= XADFIF_CRYPTED;
+		}
 
 		if ((err = xadAddFileEntryA(fi, ai, NULL))) return(XADERR_NOMEMORY);
 		
@@ -323,6 +329,16 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 
 	read_support_func(a);
 
+	if(ai->xai_Password != NULL) {
+		r = archive_read_add_passphrase(a, ai->xai_Password);
+		
+		if (r != ARCHIVE_OK) {
+			err = arc_to_xad_error(r);
+			DebugPrintF("xad_libarchive error: %s\n", archive_error_string(a));
+			return err;
+		}
+	}
+
 	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
 	cbdata->ai = ai;
 	cbdata->IxadMaster = IXadMaster;
@@ -337,7 +353,6 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
 
 	archive_read_open_memory(a, cbdata->inbuffer, ai->xai_InSize);
-
 #endif
 	
 	int i = 0;
@@ -359,6 +374,16 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 
 		i++;
 	}
+	
+	if((fi->xfi_Flags & XADFIF_CRYPTED) && (err != XADERR_OK)) {
+		/* This is a bit of a hack because libarchive doesn't set
+		 * an error code specifically for "wrong password".  So, if
+		 * decrunch fails on an encrypted archive assume this is the
+		 * reason otherwise user won't ever get re-prompted.
+		 */
+		err = XADERR_PASSWORD;
+	}
+
 	
 	archive_read_close(a);
 	archive_read_free(a);
