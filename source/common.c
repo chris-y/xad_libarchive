@@ -2,9 +2,6 @@
  * (c) 2019 Chris Young <chris@unsatisfactorysoftware.co.uk>
  */
 
-struct ExecIFace *IExec;
-struct Library *newlibbase;
-struct Interface *INewlib;
 #include "sys/types.h"
  
 #include "common.h"
@@ -15,6 +12,11 @@ struct Interface *INewlib;
 
 #include <libarchive/archive.h>
 #include <libarchive/archive_entry.h>
+
+struct Library *SysBase;
+struct ExecIFace *IExec;
+struct Library *newlibbase;
+struct Interface *INewlib;
  
  #ifndef MEMF_PRIVATE
 #define MEMF_PRIVATE 0
@@ -263,6 +265,10 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 		{
 			fi->xfi_Flags |= XADFIF_DIRECTORY;
 		}
+		
+		if(archive_entry_is_encrypted(entry)) {
+			fi->xfi_Flags |= XADFIF_CRYPTED;
+		}
 
 		if ((err = xadAddFileEntryA(fi, ai, NULL))) return(XADERR_NOMEMORY);
 		
@@ -337,9 +343,10 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
 
 	archive_read_open_memory(a, cbdata->inbuffer, ai->xai_InSize);
-
 #endif
 	
+	archive_read_add_passphrase(a, ai->xai_Password);
+
 	int i = 0;
 
 	while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
