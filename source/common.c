@@ -329,6 +329,16 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 
 	read_support_func(a);
 
+	if(ai->xai_Password != NULL) {
+		r = archive_read_add_passphrase(a, ai->xai_Password);
+		
+		if (r != ARCHIVE_OK) {
+			err = arc_to_xad_error(r);
+			DebugPrintF("xad_libarchive error: %s\n", archive_error_string(a));
+			return err;
+		}
+	}
+
 	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
 	cbdata->ai = ai;
 	cbdata->IxadMaster = IXadMaster;
@@ -345,8 +355,6 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	archive_read_open_memory(a, cbdata->inbuffer, ai->xai_InSize);
 #endif
 	
-	archive_read_add_passphrase(a, ai->xai_Password);
-
 	int i = 0;
 
 	while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
