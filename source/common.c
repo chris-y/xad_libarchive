@@ -375,6 +375,16 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 		i++;
 	}
 	
+	if((fi->xfi_Flags & XADFIF_CRYPTED) && (err != XADERR_OK)) {
+		/* This is a bit of a hack because libarchive doesn't set
+		 * an error code specifically for "wrong password".  So, if
+		 * decrunch fails on an encrypted archive assume this is the
+		 * reason otherwise user won't ever get re-prompted.
+		 */
+		err = XADERR_PASSWORD;
+	}
+
+	
 	archive_read_close(a);
 	archive_read_free(a);
 	
