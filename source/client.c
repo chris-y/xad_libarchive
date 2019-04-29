@@ -23,7 +23,7 @@
 #else
 #define XADMASTERVERSION	12
 #endif
-const char *version = VERSTAG;
+const char *version = VERSTAG "built with " ARCHIVE_VERSION_STRING "\0";
 #endif
 
 #ifdef CLIENT_ZIP
