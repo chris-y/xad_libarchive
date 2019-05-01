@@ -37,7 +37,7 @@
 			(askchoice
 				(prompt "Please select which features you want.\n"
 				"ZIPX may cause loss of features if you only deal with "
-				"normal Zip files.  For example, it does not support encryption.")
+				"normal Zip files.")
 				(help @askchoice-help)
 				(choices "RAR5"
 						"RAR5+ZIPX")

@@ -2,7 +2,7 @@ Short:        XAD (UnArc) client for RAR5/ZIPX archives
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       Chris Young
 Type:         util/arc
-Version:      3.1
+Version:      3.2
 URL:          http://www.unsatisfactorysoftware.co.uk
 Architecture: ppc-amigaos
 
@@ -10,7 +10,7 @@ This is a xadmaster client for extraction of archives using
 libarchive.  It currently supports RAR5 and ZIPX files.
 
 Note that the optional Zip portion, unlike the built-in version,
-does not yet support encryption or self-extracting archives.
+does not yet support self-extracting archives.
 Self-extracting archives are still handled with the built-in
 Zip client even with this installed.
 
@@ -20,8 +20,8 @@ How to identify which version you are running
 
 In the Shell, type xadLibInfo:
 
-Zip                       | 5016 | 13 |  3.1  | FILE,EXTERN,FREE(FI)
-RAR5                      | ---- | 13 |  3.1  | FILE,EXTERN,FREE(FI)
+Zip                       | 5016 | 13 |  3.2  | FILE,EXTERN,FREE(FI)
+RAR5                      | ---- | 13 |  3.2  | FILE,EXTERN,FREE(FI)
                                          ^^^
                                           |
                                     client version
@@ -47,6 +47,9 @@ support RAR4 files, so you still need a client specifically for RAR4.
 
 HISTORY
 =======
+
+3.2 (01.05.2019)
+Zip client now supports encrypted files.
 
 3.1 (28.04.2019)
 First release.
