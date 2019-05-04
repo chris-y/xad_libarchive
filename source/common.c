@@ -76,22 +76,6 @@ xad_read(struct archive *a, void *client_data, const void **buff)
   return (ssize_t)(cbdata->ai->xai_InPos - pos);
 }
 
-static int
-xad_close(struct archive *a, void *client_data)
-{
-  struct callbackuserdata *cbdata = client_data;
-	struct XadMasterIFace *IXadMaster = cbdata->IxadMaster;
-
-  if(cbdata->inbuffer != NULL) {
-		xadFreeObjectA(cbdata->inbuffer, NULL);
-		cbdata->inbuffer = NULL;
-  }
-
-    xadHookAccess(XADAC_INPUTSEEK, - cbdata->ai->xai_InPos, NULL, cbdata->ai);
-  
-  return (ARCHIVE_OK);
-}
-
 static la_int64_t xad_skip(struct archive *a, void *client_data, int64_t request)
 {
 	struct callbackuserdata *cbdata = client_data;
@@ -140,10 +124,10 @@ static la_int64_t xad_seek(struct archive *a, void *client_data, int64_t offset,
 		break;
 	}
 	
-//#ifdef DEBUG
+#ifdef DEBUG
 	struct ExecIFace *IExec = (struct ExecIFace *)(*(struct ExecBase **)4)->MainInterface;
 	DebugPrintF("seek: %ld, pos: %ld, old pos: %ld, orig req: %lld / %lx\n", cbdata->ai->xai_InPos - pos, cbdata->ai->xai_InPos, pos, offset, whence);
-//#endif
+#endif
 
 	return ARCHIVE_OK; //(int64_t)(cbdata->ai->xai_InPos - pos);
 	
@@ -219,15 +203,18 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	read_support_func(a);
 
 	cbdata = xadAllocVec(sizeof(struct callbackuserdata), MEMF_PRIVATE | MEMF_CLEAR);
-	
+
 #ifdef STREAMED_DATA
 	cbdata->ai = ai;
 	cbdata->IxadMaster = IXadMaster;
-
-	archive_read_open2(a, cbdata, NULL, xad_read, xad_skip, xad_close);
+	
+	archive_read_set_read_callback(a, xad_read);
+	archive_read_set_skip_callback(a, xad_skip);
 #ifdef SEEK_CALLBACK
 	archive_read_set_seek_callback(a, xad_seek);
 #endif
+	archive_read_set_callback_data(a, cbdata);
+	archive_read_open1(a);
 #else
 	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);
@@ -344,10 +331,13 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	cbdata->IxadMaster = IXadMaster;
 
 #ifdef STREAMED_DATA
-	archive_read_open2(a, cbdata, NULL, xad_read, xad_skip, xad_close);
+	archive_read_set_read_callback(a, xad_read);
+	archive_read_set_skip_callback(a, xad_skip);
 #ifdef SEEK_CALLBACK
 	archive_read_set_seek_callback(a, xad_seek);
 #endif
+	archive_read_set_callback_data(a, cbdata);
+	archive_read_open1(a);
 #else
 	cbdata->inbuffer = xadAllocVec(ai->xai_InSize, MEMF_CLEAR);
 	xadHookAccess(XADAC_READ, ai->xai_InSize, cbdata->inbuffer, ai);

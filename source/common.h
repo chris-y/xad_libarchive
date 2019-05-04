@@ -9,7 +9,7 @@
 #define STREAMED_DATA 1
 
 /* also use seek callback */
-//#define SEEK_CALLBACK 1
+#define SEEK_CALLBACK 1
 
 /* maximum amount of data to read at a time */
 #define MAXCHUNKSIZE 1024
