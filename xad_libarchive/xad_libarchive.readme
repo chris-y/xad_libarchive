@@ -3,6 +3,7 @@ Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       Chris Young
 Type:         util/arc
 Version:      3.2
+Requires:     util/libs/lzma_lib.lha
 URL:          http://www.unsatisfactorysoftware.co.uk
 Architecture: ppc-amigaos
 

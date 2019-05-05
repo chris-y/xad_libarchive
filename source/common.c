@@ -15,10 +15,12 @@
 
 struct Library *SysBase;
 struct ExecIFace *IExec;
-struct Library *newlibbase;
-struct Interface *INewlib;
- 
- #ifndef MEMF_PRIVATE
+struct Library *newlibbase = NULL;
+struct Interface *INewlib = NULL;
+struct Library *lzmaBase = NULL;
+struct Interface *Ilzma = NULL;
+
+#ifndef MEMF_PRIVATE
 #define MEMF_PRIVATE 0
 #endif
 
@@ -310,6 +312,16 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 		libnixopen();
 	#endif
 	
+	if(!lzmaBase) {
+	    lzmaBase = OpenLibrary("lzma.library", 0);
+    	if(lzmaBase)
+        	Ilzma = GetInterface(lzmaBase, "main", 1, NULL);
+	}
+	if(!Ilzma) {
+		DebugPrintF("xad_libarchive error: Unable to open lzma.library\n");
+		return XADERR_RESOURCE;
+	}
+
 	xadHookAccess(XADAC_INPUTSEEK, - ai->xai_InPos, NULL, ai);
 	
 	a = archive_read_new();
@@ -414,12 +426,17 @@ REG(a6, struct xadMasterBase *xadMasterBase))
 	xadFreeObjectA(ai->xai_PrivateClient,NULL);
 	ai->xai_PrivateClient = NULL;
 
-	#ifdef __amigaos4__
-    DropInterface(INewlib);
-    CloseLibrary(newlibbase);
+    if(Ilzma) DropInterface(Ilzma);
+    if(lzmaBase) CloseLibrary(lzmaBase);
+	Ilzma = NULL;
+	lzmaBase = NULL;
+	
+#ifdef __amigaos4__
+    if(INewlib) DropInterface(INewlib);
+    if(newlibbase) CloseLibrary(newlibbase);
 	INewlib = NULL;
 	newlibbase = NULL;
-	#else
-		libnixclose();
-	#endif
+#else
+	libnixclose();
+#endif
 }

@@ -52,7 +52,6 @@ Mkfile.old
 dkms.conf
 
 # Binaries in build dir
-source/RAR
-source/RAR5
-source/Zip
 source/libarchive
+
+xad_libarchive.lha

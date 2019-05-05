@@ -26,11 +26,21 @@
 			)
 		)
 
-		(run "CopyStore RAR/RAR libs:xad")
+		(run "CopyStore RAR5/libarchive libs:xad")
 		(exit (quiet))
 	)
 	;else
 	(
+
+		(set #lzma-ver
+			(getversion "libs:lzma.library")
+		)
+
+		(if (= #lzma-ver 0)
+			(abort "This xadmaster client requires lzma.library.\n"
+			"Please install it first.")
+		)
+	
 		(welcome)
 
 		(set #components
