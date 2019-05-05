@@ -6,17 +6,12 @@
 #include "macros.h"
 
 #ifndef XADMASTERFILE
-#ifdef CLIENT_RAR5
-	#define rar5_Client		FirstClient
-#else
-	#ifdef CLIENT_ZIP
-		#define zip_Client		FirstClient
-	#endif
-#endif
+#define rar5_Client		FirstClient
+#define rar5_NextClient &7zip_Client
 #ifdef CLIENT_ZIP
-#define rar5_NextClient	&zip_Client
+#define 7zip_NextClient	&zip_Client
 #else
-#define rar5_NextClient 0
+#define 7zip_NextClient 0
 #endif
 #ifdef __amigaos4__
 #define XADMASTERVERSION	13
@@ -39,6 +34,21 @@ XAD_MACRO_RECOGFILE(zip)
 XAD_MACRO_GETINFO(zip)
 XAD_MACRO_UNARCHIVE(zip)
 XAD_MACRO_CLIENT(zip, "Zip", XADCID_ZIP, 0)
+#endif
+
+#ifdef CLIENT_7ZIP
+XAD_MACRO_RECOGFILE(7zip)
+{
+  if((data[0]=='7') & (data[1]=='z') & (data[2]==0xBC) & (data[3]==0xAF) & (data[4]==0x27) & (data[5]==0x1C)) {
+		return 1; /* known file */
+  }
+
+    return 0; /* unknown file */
+}
+
+XAD_MACRO_GETINFO(7zip)
+XAD_MACRO_UNARCHIVE(7zip)
+XAD_MACRO_CLIENT(7zip, "7-Zip", 0, 7zip_NextClient)
 #endif
 
 #ifdef CLIENT_RAR5
