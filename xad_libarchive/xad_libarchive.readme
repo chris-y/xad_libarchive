@@ -1,4 +1,4 @@
-Short:        XAD (UnArc) client for RAR5/ZIPX archives
+Short:        XAD (UnArc) client for RAR5/ZipX/7-Zip archives
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       Chris Young
 Type:         util/arc
@@ -8,13 +8,15 @@ URL:          http://www.unsatisfactorysoftware.co.uk
 Architecture: ppc-amigaos
 
 This is a xadmaster client for extraction of archives using
-libarchive.  It currently supports RAR5 and ZIPX files.
+libarchive.  It currently supports RAR5, Zip/ZipX and 7-Zip
+archives.
 
 Note that the optional Zip portion, unlike the built-in version,
 does not yet support self-extracting archives.
 Self-extracting archives are still handled with the built-in
 Zip client even with this installed.
-
+The Zip portion adds significant size to the client, which may
+be a consideration on low memory systems.
 
 How to identify which version you are running
 ---------------------------------------------
@@ -22,6 +24,7 @@ How to identify which version you are running
 In the Shell, type xadLibInfo:
 
 Zip                       | 5016 | 13 |  3.2  | FILE,EXTERN,FREE(FI)
+7-Zip                     | ---- | 13 |  3.2  | FILE,EXTERN,FREE(FI)
 RAR5                      | ---- | 13 |  3.2  | FILE,EXTERN,FREE(FI)
                                          ^^^
                                           |
@@ -30,10 +33,19 @@ RAR5                      | ---- | 13 |  3.2  | FILE,EXTERN,FREE(FI)
 Any lines with version numbers not matching that on this readme
 do not come from this client.
 
-Importantly, the Zip line may look like this:
+EXISTING ZIP CLIENT
+-------------------
+
+The Zip line may look like this:
 Zip                       | 5016 | 13 |  1.12 | FILE
 
 This is the Zip client built in to xadmaster.library.
+
+This will appear if you selected to install the client
+without Zip/ZipX support.
+
+EXISTING RAR CLIENT
+-------------------
 
 You may also have a RAR (not RAR5) client:
 RAR                       | ---- | 13 |  2.6  | FILE,EXTERN,FREE(FI)
@@ -45,9 +57,21 @@ The install script will handle this for you.
 Due to compatibility issues, the libarchive client does not yet
 support RAR4 files, so you still need a client specifically for RAR4.
 
+OTHER CLIENTS
+-------------
+
+You may also have an existing 7-Zip client:
+7-Zip                     | ---- | 13 |  2.8  | FILE,EXTERN,FREE(FI)
+
+This will be moved into SYS:Storage by the Installer script.
+If you have duplicate 7-Zip lines the old client will need to be
+removed manually.
+
 
 HISTORY
 =======
+3.3 (xx.xx.xxxx)
+7-Zip
 
 3.2 (01.05.2019)
 Zip client now supports encrypted files.

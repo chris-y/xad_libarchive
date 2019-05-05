@@ -1,5 +1,5 @@
 CLIENTS := -DCLIENT_RAR5 -DCLIENT_7ZIP -DCLIENT_ZIP
-DEBUG   :=
+DEBUG   := -DDEBUG
 #-gstabs
 CFLAGS  := -Wall -O3 -D__USE_INLINE__ $(CLIENTS) $(DEBUG)
 LDFLAGS := -Tdata=0 -nostartfiles

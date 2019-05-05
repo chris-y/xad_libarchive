@@ -7,11 +7,11 @@
 
 #ifndef XADMASTERFILE
 #define rar5_Client		FirstClient
-#define rar5_NextClient &7zip_Client
+#define rar5_NextClient &sevenzip_Client
 #ifdef CLIENT_ZIP
-#define 7zip_NextClient	&zip_Client
+#define sevenzip_NextClient	&zip_Client
 #else
-#define 7zip_NextClient 0
+#define sevenzip_NextClient 0
 #endif
 #ifdef __amigaos4__
 #define XADMASTERVERSION	13
@@ -31,13 +31,13 @@ XAD_MACRO_RECOGFILE(zip)
     return 0; /* unknown file */
 }
 
-XAD_MACRO_GETINFO(zip)
-XAD_MACRO_UNARCHIVE(zip)
+XAD_MACRO_GETINFO(zip,zip)
+XAD_MACRO_UNARCHIVE(zip,zip)
 XAD_MACRO_CLIENT(zip, "Zip", XADCID_ZIP, 0)
 #endif
 
 #ifdef CLIENT_7ZIP
-XAD_MACRO_RECOGFILE(7zip)
+XAD_MACRO_RECOGFILE(sevenzip)
 {
   if((data[0]=='7') & (data[1]=='z') & (data[2]==0xBC) & (data[3]==0xAF) & (data[4]==0x27) & (data[5]==0x1C)) {
 		return 1; /* known file */
@@ -46,9 +46,9 @@ XAD_MACRO_RECOGFILE(7zip)
     return 0; /* unknown file */
 }
 
-XAD_MACRO_GETINFO(7zip)
-XAD_MACRO_UNARCHIVE(7zip)
-XAD_MACRO_CLIENT(7zip, "7-Zip", 0, 7zip_NextClient)
+XAD_MACRO_GETINFO(sevenzip,7zip)
+XAD_MACRO_UNARCHIVE(sevenzip,7zip)
+XAD_MACRO_CLIENT(sevenzip, "7-Zip", 0, sevenzip_NextClient)
 #endif
 
 #ifdef CLIENT_RAR5
@@ -61,7 +61,7 @@ XAD_MACRO_RECOGFILE(rar5)
     return 0; /* unknown file */
 }
 
-XAD_MACRO_GETINFO(rar5)
-XAD_MACRO_UNARCHIVE(rar5)
+XAD_MACRO_GETINFO(rar5,rar5)
+XAD_MACRO_UNARCHIVE(rar5,rar5)
 XAD_MACRO_CLIENT(rar5, "RAR5", 0, rar5_NextClient)
 #endif

@@ -34,14 +34,14 @@ struct Interface *INewlib;
 #define XAD_MACRO_RECOGFILE(CLIENT) BOOL CLIENT##_RecogData(ULONG size, STRPTR data,	\
 								struct XadMasterIFace *IXadMaster)
 
-#define XAD_MACRO_GETINFO(CLIENT) LONG CLIENT##_GetInfo(struct xadArchiveInfo *ai, struct XadMasterIFace *IXadMaster)	\
+#define XAD_MACRO_GETINFO(CLIENT,LIBARCHIVECLIENT) LONG CLIENT##_GetInfo(struct xadArchiveInfo *ai, struct XadMasterIFace *IXadMaster)	\
 	{	\
-		return xad_common_GetInfo(ai, IXadMaster, &archive_read_support_format_##CLIENT);	\
+		return xad_common_GetInfo(ai, IXadMaster, &archive_read_support_format_##LIBARCHIVECLIENT);	\
 	}
 
-#define XAD_MACRO_UNARCHIVE(CLIENT) LONG CLIENT##_UnArchive(struct xadArchiveInfo *ai, struct XadMasterIFace *IXadMaster)	\
+#define XAD_MACRO_UNARCHIVE(CLIENT,LIBARCHIVECLIENT) LONG CLIENT##_UnArchive(struct xadArchiveInfo *ai, struct XadMasterIFace *IXadMaster)	\
 	{	\
-		return xad_common_UnArchive(ai, IXadMaster, &archive_read_support_format_##CLIENT);	\
+		return xad_common_UnArchive(ai, IXadMaster, &archive_read_support_format_##LIBARCHIVECLIENT);	\
 	}
 	
 #define XAD_MACRO_CLIENT(CLIENT,MODNAME,REPLACE,NEXTCLIENT) const struct xadClient CLIENT##_Client = {	\

@@ -46,11 +46,12 @@
 		(set #components
 			(askchoice
 				(prompt "Please select which features you want.\n"
-				"ZIPX may cause loss of features if you only deal with "
+				"ZipX dramatically increases the size of the client and "
+				"may cause loss of features if you only deal with "
 				"normal Zip files.")
 				(help @askchoice-help)
-				(choices "RAR5"
-						"RAR5+ZIPX")
+				(choices "RAR5, 7-Zip"
+						"RAR5, 7-Zip, ZipX")
 				(default 0)
 			)
 		)
@@ -66,6 +67,21 @@
 			(confirm "expert")
 		)
 
+		(set #7z-ver (getversion "libs:xad/7z"))
+		(if (> #7z-ver 0)
+			(
+				(copyfiles
+					(prompt "An existing 7-Zip client is installed.\n"
+						"This will be moved to the below location")
+					(help @copyfiles-help)
+					(source "libs:xad/7z")
+					(dest "SYS:Storage/xad_client_bak")
+					(confirm)
+				)
+				(delete "libs:xad/7z" (optional "force"))
+			)
+		)
+		
 		(copylib
 			(prompt "Due to a recognition bug in RAR client 2.x, "
 			"you must update this to v2.6 to ensure the RAR5 client "
