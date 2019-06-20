@@ -10,6 +10,12 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 
+#include <proto/amisslmaster.h>
+#include <proto/amissl.h>
+#include <libraries/amisslmaster.h>
+#include <libraries/amissl.h>
+#include <amissl/amissl.h>
+
 #include <libarchive/archive.h>
 #include <libarchive/archive_entry.h>
 
@@ -19,6 +25,10 @@ struct Library *newlibbase = NULL;
 struct Interface *INewlib = NULL;
 struct Library *LZMABase = NULL;
 struct Interface *ILZMA = NULL;
+struct Library *AmiSSLMasterBase = NULL;
+struct AmiSSLMasterIFace *IAmiSSLMaster = NULL;
+struct Library *AmiSSLBase = NULL;
+struct AmiSSLIFace *IAmiSSL = NULL;
 
 #ifndef MEMF_PRIVATE
 #define MEMF_PRIVATE 0
@@ -299,6 +309,7 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 	int r;
 	struct callbackuserdata *cbdata;
 	UBYTE *outbuffer = NULL;
+	BOOL amissl_open = FALSE;
 
 	#ifdef __amigaos4__
 	if(!newlibbase)
@@ -322,6 +333,29 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 		return XADERR_RESOURCE;
 	}
 
+	if(fi->xfi_Flags & XADFIF_CRYPTED) {
+		/* If encrypted open AmiSSL */
+		if(AmiSSLMasterBase = OpenLibrary("amisslmaster.library", AMISSLMASTER_MIN_VERSION)) {
+			if((IAmiSSLMaster = (struct AmiSSLMasterIFace *)GetInterface((struct Library *)AmiSSLMasterBase, "main", 1, NULL))) {
+				if(InitAmiSSLMaster(AMISSL_CURRENT_VERSION, TRUE)) {
+					if(AmiSSLBase = OpenAmiSSL()) {
+						if((IAmiSSL = (struct AmiSSLIFace *)GetInterface((struct Library *)AmiSSLBase, "main", 1, NULL))) {
+							if(InitAmiSSL(TAG_DONE) == 0) {
+								amissl_open = TRUE;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if(amissl_open == FALSE) {
+			DebugPrintF("xad_libarchive error: Unable to open AmiSSL\n");
+			return XADERR_RESOURCE;
+		}
+
+	}
+
 	xadHookAccess(XADAC_INPUTSEEK, - ai->xai_InPos, NULL, ai);
 	
 	a = archive_read_new();
@@ -334,7 +368,7 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 		if (r != ARCHIVE_OK) {
 			err = arc_to_xad_error(r);
 			DebugPrintF("xad_libarchive error: %s\n", archive_error_string(a));
-			return err;
+			goto _cleanup;
 		}
 	}
 
@@ -406,7 +440,22 @@ REG(a6, struct xadMasterBase *xadMasterBase), void (*read_support_func)(struct a
 		xadFreeObjectA(cbdata, NULL);
 		cbdata = NULL;
 	}
-  
+
+_cleanup:
+
+	if(amissl_open) {
+		CleanupAmiSSL(TAG_DONE);
+		DropInterface((struct Interface *)IAmiSSL);
+		CloseAmiSSL();
+
+		AmiSSLBase = NULL;
+		IAmiSSL = NULL;
+
+		DropInterface((struct Interface *)IAmiSSLMaster);
+		CloseLibrary((struct Library *)AmiSSLMasterBase);
+		AmiSSLMasterBase = NULL;
+	}  
+
 	return(err);
 }
 
