@@ -2,8 +2,8 @@ Short:        XAD (UnArc) client for RAR5/ZIPX archives
 Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       Chris Young
 Type:         util/arc
-Version:      3.2
-Requires:     util/libs/lzma_lib.lha
+Version:      3.3
+Requires:     util/libs/lzma_lib.lha util/libs/AmiSSL-4.3.lha
 URL:          http://www.unsatisfactorysoftware.co.uk
 Architecture: ppc-amigaos
 
@@ -21,8 +21,8 @@ How to identify which version you are running
 
 In the Shell, type xadLibInfo:
 
-Zip                       | 5016 | 13 |  3.2  | FILE,EXTERN,FREE(FI)
-RAR5                      | ---- | 13 |  3.2  | FILE,EXTERN,FREE(FI)
+Zip                       | 5016 | 13 |  3.3  | FILE,EXTERN,FREE(FI)
+RAR5                      | ---- | 13 |  3.3  | FILE,EXTERN,FREE(FI)
                                          ^^^
                                           |
                                     client version
@@ -48,6 +48,10 @@ support RAR4 files, so you still need a client specifically for RAR4.
 
 HISTORY
 =======
+
+3.3 (20.06.2019)
+Decryption now uses AmiSSL. Should reduce memory usage.
+Built against release version of libarchive 3.4.0
 
 3.2 (01.05.2019)
 Zip client now supports encrypted files.
